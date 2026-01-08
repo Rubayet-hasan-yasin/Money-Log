@@ -1,8 +1,35 @@
-# Welcome to your Expo app 👋
+# Expense Manager - React Native Expo App 💰
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A comprehensive expense tracking mobile application built with React Native and Expo. This app connects to the [expense-manager-apis](https://github.com/Rubayet-hasan-yasin/expense-manager-apis) backend for managing personal finances.
 
-## Get started
+## Features
+
+- 🔐 **Authentication** - Login/Register with JWT-based authentication
+- 📊 **Dashboard** - View spending summaries, category breakdowns, and monthly trends
+- 💰 **Expense Management** - Create, edit, delete expenses with filtering
+- 🏷️ **Category Management** - Custom categories with colors and icons
+- 💱 **Multi-Currency Support** - Track expenses in USD, EUR, GBP, and more
+- 👤 **Profile Management** - Update user information
+- 🌙 **Dark Mode Support** - Automatic theme switching
+
+## Tech Stack
+
+- **React Native** with **Expo** (~54.0)
+- **Expo Router** for file-based navigation
+- **TypeScript** for type safety
+- **AsyncStorage** for local data persistence
+- **Ionicons** for vector icons
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Expo CLI
+- iOS Simulator (Mac) or Android Emulator
+
+### Installation
 
 1. Install dependencies
 
@@ -10,41 +37,105 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Configure the API endpoint
+
+   Edit `constants/api-config.ts` to point to your backend server:
+
+   ```typescript
+   // For local development
+   // Android Emulator: use 10.0.2.2 instead of localhost
+   // iOS Simulator: localhost works
+   // Physical device: use your computer's IP address
+   
+   BASE_URL: 'http://localhost:3000/api/v1'
+   ```
+
+3. Start the app
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. Open in simulator/emulator
+   - Press `i` for iOS simulator
+   - Press `a` for Android emulator
+   - Scan QR code with Expo Go app for physical device
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+expense-manager-expo/
+├── app/                      # Expo Router screens
+│   ├── (tabs)/              # Tab navigation screens
+│   │   ├── index.tsx        # Dashboard
+│   │   ├── expenses.tsx     # Expenses list
+│   │   ├── categories.tsx   # Categories list
+│   │   └── profile.tsx      # User profile
+│   ├── expense/             # Expense detail screens
+│   ├── category/            # Category detail screens
+│   ├── login.tsx            # Login screen
+│   └── register.tsx         # Register screen
+├── components/              # Reusable UI components
+├── constants/               # App constants and config
+│   ├── api-config.ts        # API configuration
+│   └── theme.ts             # Theme colors
+├── contexts/                # React contexts
+│   └── auth-context.tsx     # Authentication context
+├── hooks/                   # Custom hooks
+│   ├── use-expenses.ts      # Expenses hook
+│   ├── use-categories.ts    # Categories hook
+│   └── use-dashboard.ts     # Dashboard hook
+├── services/                # API services
+│   └── api.ts               # API client
+├── types/                   # TypeScript types
+│   └── index.ts             # All type definitions
+└── utils/                   # Utility functions
+    └── formatters.ts        # Format helpers
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## API Integration
 
-## Learn more
+This app is designed to work with the [expense-manager-apis](https://github.com/Rubayet-hasan-yasin/expense-manager-apis) backend. The API provides:
 
-To learn more about developing your project with Expo, look at the following resources:
+- User authentication (register, login, profile)
+- Expense CRUD with filtering and pagination
+- Category management with colors and icons
+- Dashboard analytics (summary, trends, category breakdown)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### API Endpoints Used
 
-## Join the community
+| Endpoint | Description |
+|----------|-------------|
+| `POST /auth/register` | Register new user |
+| `POST /auth/login` | Login user |
+| `GET /auth/profile` | Get user profile |
+| `PUT /auth/profile` | Update profile |
+| `GET /expenses` | List expenses (paginated) |
+| `POST /expenses` | Create expense |
+| `PUT /expenses/:id` | Update expense |
+| `DELETE /expenses/:id` | Delete expense |
+| `GET /categories` | List categories |
+| `POST /categories` | Create category |
+| `PUT /categories/:id` | Update category |
+| `DELETE /categories/:id` | Delete category |
+| `GET /dashboard/summary` | Get spending summary |
+| `GET /dashboard/monthly-trends` | Get monthly trends |
+| `GET /dashboard/recent-expenses` | Get recent expenses |
 
-Join our community of developers creating universal apps.
+## Scripts
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `npm start` - Start Expo development server
+- `npm run android` - Start on Android
+- `npm run ios` - Start on iOS
+- `npm run web` - Start on web
+- `npm run lint` - Run ESLint
+
+## Learn More
+
+- [Expo documentation](https://docs.expo.dev/)
+- [React Navigation](https://reactnavigation.org/)
+- [Expo Router](https://expo.github.io/router/docs/)
+
+## License
+
+MIT
