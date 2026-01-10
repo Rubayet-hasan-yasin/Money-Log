@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "icon":{
+      "icon": {
         "dark": "./assets/icons/ios-dark.png",
         "light": "./assets/icons/ios-light.png",
         "tinted": "./assets/icons/ios-tinted.png"
@@ -59,7 +59,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "712f997f-2913-4319-b9a4-e900ecd35944"
+        "projectId": "6171e274-6dfc-4dc9-b0d9-f568c3262438"
       }
     },
     "owner": "rubayethasanyasin"

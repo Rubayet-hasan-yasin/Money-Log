@@ -12,6 +12,13 @@ A comprehensive expense tracking mobile application built with React Native and 
 - 👤 **Profile Management** - Update user information
 - 🌙 **Dark Mode Support** - Automatic theme switching
 
+## 📱 Android APK
+
+Download the latest APK from:
+https://github.com/Rubayet-hasan-yasin/expense-manager-expo/releases
+
+> **Note:** Make sure to download the latest release version for the best experience and bug fixes.
+
 ## Tech Stack
 
 - **React Native** with **Expo** (~54.0)
