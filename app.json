@@ -1,23 +1,32 @@
 {
   "expo": {
-    "name": "expense-manager-expo",
-    "slug": "expense-manager-expo",
+    "name": "MoneyLog",
+    "slug": "moneylog",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "expensemanagerexpo",
+    "icon": "./assets/icons/adaptive-icon.png",
+    "scheme": "moneylog",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": {
+        "dark": "./assets/icons/ios-dark.png",
+        "light": "./assets/icons/ios-light.png",
+        "tinted": "./assets/icons/ios-tinted.png"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "monochromeImage": "./assets/icons/adaptive-icon.png"
       },
+      "package": "com.rubayethasanyasin.expensemanager",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -30,19 +39,29 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/icons/splash-icon-dark.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#000000",
+            "image": "./assets/icons/splash-icon-light.png"
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6171e274-6dfc-4dc9-b0d9-f568c3262438"
+      }
+    },
+    "owner": "rubayethasanyasin"
   }
 }
