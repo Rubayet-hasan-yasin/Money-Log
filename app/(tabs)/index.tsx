@@ -1,10 +1,10 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
-import { CategoryAnalytics, DashboardSummary, Expense, MonthlyTrend } from '@/types';
+import { CategoryAnalytics, DashboardSummary, Expense, MonthlyTrend, Wallet } from '@/types';
 import { calculateTrend } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from 'react-native';
 
@@ -32,26 +33,30 @@ export default function DashboardScreen() {
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
   const [categoryAnalytics, setCategoryAnalytics] = useState<CategoryAnalytics[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
+  const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
   const fetchDashboardData = async () => {
     try {
-      const [summaryRes, recentRes, trendsRes, analyticsRes] = await Promise.all([
+      const [summaryRes, recentRes, trendsRes, analyticsRes, walletsRes] = await Promise.all([
         api.getDashboardSummary(),
         api.getRecentExpenses(5),
         api.getMonthlyTrends(new Date().getFullYear()),
         api.getCategoryAnalytics(),
+        api.getWallets()
       ]);
 
       if (summaryRes.summary) setSummary(summaryRes.summary);
       if (recentRes.expenses) setRecentExpenses(recentRes.expenses);
       if (trendsRes.trends) setMonthlyTrends(trendsRes.trends);
       if (analyticsRes.categoryAnalytics) setCategoryAnalytics(analyticsRes.categoryAnalytics);
+      if (walletsRes.wallets) setWallets(walletsRes.wallets);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -71,9 +76,8 @@ export default function DashboardScreen() {
     fetchDashboardData();
   };
 
-  const formatCurrency = (amount: number, currency = 'USD') => {
-    // const curr = CURRENCIES.find(c => c.code === currency);
-    return `${'৳'}${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => {
+    return `৳${amount.toFixed(2)}`;
   };
 
   const formatCompactCurrency = (amount: number) => {
@@ -90,8 +94,8 @@ export default function DashboardScreen() {
   // Calculate expense trend
   const getExpenseTrend = () => {
     if (monthlyTrends.length < 2) return null;
-    const current = monthlyTrends[monthlyTrends.length - 1]?.totalAmount || 0;
-    const previous = monthlyTrends[monthlyTrends.length - 2]?.totalAmount || 0;
+    const current = monthlyTrends[monthlyTrends.length - 1]?.totalExpenses || 0;
+    const previous = monthlyTrends[monthlyTrends.length - 2]?.totalExpenses || 0;
     return calculateTrend(current, previous);
   };
 
@@ -115,7 +119,7 @@ export default function DashboardScreen() {
     );
   }
 
-  const maxTrend = Math.max(...monthlyTrends.map(t => t.totalAmount), 1);
+  const maxTrend = Math.max(...monthlyTrends.map(t => Math.max(t.totalExpenses || 0, t.totalIncome || 0)), 1);
   const expenseTrend = getExpenseTrend();
   const top5Categories = getTop5Categories();
   const totalCategoryAmount = getTotalCategoryAmount();
@@ -138,58 +142,83 @@ export default function DashboardScreen() {
         </Text>
       </View>
 
-      {/* Summary Cards */}
+      {/* Summary Section */}
       <View style={styles.summaryContainer}>
-        <View style={[styles.summaryCard, { backgroundColor: tintColor }]}>
-          <Text style={styles.summaryLabel}>Total Expenses</Text>
+        {/* Net Balance Card */}
+        <View style={[styles.summaryCard, { backgroundColor: '#1e293b' }]}>
+          <Text style={styles.summaryLabel}>Total Net Balance</Text>
           <Text style={styles.summaryValue}>
-            {formatCurrency(summary?.totalAmount || 0)}
+            {formatCurrency(summary?.netBalance || 0)}
           </Text>
-          <View style={styles.summaryFooter}>
-            <Text style={styles.summarySubtext}>
-              {summary?.totalCount || 0} transactions
-            </Text>
-            {monthlyTrends.length >= 2 && (
-              <View style={styles.trendBadge}>
-                {(() => {
-                  const current = monthlyTrends[monthlyTrends.length - 1]?.totalAmount || 0;
-                  const previous = monthlyTrends[monthlyTrends.length - 2]?.totalAmount || 0;
-                  const trend = calculateTrend(current, previous);
-                  return (
-                    <>
-                      <Ionicons 
-                        name={trend.isIncrease ? "arrow-up" : "arrow-down"} 
-                        size={12} 
-                        color="#fff" 
-                      />
-                      <Text style={styles.trendText}>
-                        {trend.percentage.toFixed(0)}%
-                      </Text>
-                    </>
-                  );
-                })()}
-              </View>
-            )}
-          </View>
+          <Text style={styles.summarySubtext}>
+            Across {wallets.length} account{wallets.length !== 1 ? 's' : ''}
+          </Text>
         </View>
 
+        {/* Income & Expenses Side by Side */}
         <View style={styles.summaryRow}>
           <View style={[styles.summaryCardSmall, { backgroundColor: '#22c55e' }]}>
-            <Text style={styles.smallCardLabel}>Average</Text>
+            <View style={styles.smallCardHeader}>
+              <Ionicons name="trending-up" size={16} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.smallCardLabel}>Income</Text>
+            </View>
             <Text style={styles.smallCardValue}>
-              {formatCurrency(summary?.averageExpense || 0)}
+              {formatCurrency(summary?.totalIncome || 0)}
             </Text>
           </View>
-          <View style={[styles.summaryCardSmall, { backgroundColor: '#8b5cf6' }]}>
-            <Text style={styles.smallCardLabel}>Categories</Text>
+          <View style={[styles.summaryCardSmall, { backgroundColor: '#ef4444' }]}>
+            <View style={styles.smallCardHeader}>
+              <Ionicons name="trending-down" size={16} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.smallCardLabel}>Expenses</Text>
+            </View>
             <Text style={styles.smallCardValue}>
-              {summary?.categoryBreakdown ? Object.keys(summary.categoryBreakdown).length : 0}
+              {formatCurrency(summary?.totalAmount || 0)}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Expense Trend Card */}
+      {/* Wallets Horizontal Scroll */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: textColor, marginBottom: 0 }]}>
+            My Accounts / Wallets
+          </Text>
+          <TouchableOpacity 
+            style={styles.addWalletButton} 
+            onPress={() => router.push('/wallet/new' as any)}
+          >
+            <Ionicons name="add-circle" size={24} color={tintColor} />
+          </TouchableOpacity>
+        </View>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.walletsContainer}
+        >
+          {wallets.map(w => (
+            <TouchableOpacity 
+              key={w.id} 
+              style={[styles.walletCard, { backgroundColor: cardBg }]}
+              onPress={() => router.push(`/wallet/${w.id}` as any)}
+            >
+              <View style={styles.walletHeader}>
+                <View style={[styles.walletIconBadge, { backgroundColor: (w.color || tintColor) + '20' }]}>
+                  <Text style={styles.walletIcon}>{w.icon || '💵'}</Text>
+                </View>
+                <Text style={[styles.walletName, { color: textColor }]} numberOfLines={1}>
+                  {w.name}
+                </Text>
+              </View>
+              <Text style={[styles.walletBalance, { color: textColor }]}>
+                {formatCurrency(w.balance)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Expense Trend Alert Card */}
       {expenseTrend && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
@@ -217,14 +246,14 @@ export default function DashboardScreen() {
               <View style={styles.trendCompareItem}>
                 <Text style={[styles.trendCompareLabel, { color: '#6b7280' }]}>Last Month</Text>
                 <Text style={[styles.trendCompareValue, { color: textColor }]}>
-                  {formatCurrency(monthlyTrends[monthlyTrends.length - 2]?.totalAmount || 0)}
+                  {formatCurrency(monthlyTrends[monthlyTrends.length - 2]?.totalExpenses || 0)}
                 </Text>
               </View>
               <Ionicons name="arrow-forward" size={20} color="#9ca3af" />
               <View style={styles.trendCompareItem}>
                 <Text style={[styles.trendCompareLabel, { color: '#6b7280' }]}>This Month</Text>
                 <Text style={[styles.trendCompareValue, { color: textColor }]}>
-                  {formatCurrency(monthlyTrends[monthlyTrends.length - 1]?.totalAmount || 0)}
+                  {formatCurrency(monthlyTrends[monthlyTrends.length - 1]?.totalExpenses || 0)}
                 </Text>
               </View>
             </View>
@@ -238,7 +267,7 @@ export default function DashboardScreen() {
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             Top 5 Spending Categories
           </Text>
-          <View style={[styles.card, { borderColor: '#e5e7eb' }]}>
+          <View style={[styles.card, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
             {top5Categories.map((category, index) => {
               const maxAmount = top5Categories[0]?.totalAmount || 1;
               const percentage = totalCategoryAmount > 0 ? (category.totalAmount / totalCategoryAmount) * 100 : 0;
@@ -287,13 +316,13 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Category Breakdown (Pie Chart Style) */}
+      {/* Category Breakdown Legend */}
       {categoryAnalytics.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>
             Category Breakdown
           </Text>
-          <View style={[styles.card, { borderColor: '#e5e7eb' }]}>
+          <View style={[styles.card, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
             {/* Horizontal bar representation */}
             <View style={styles.pieBarContainer}>
               {categoryAnalytics.slice(0, 6).map((cat, index) => {
@@ -333,7 +362,7 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Monthly Trends */}
+      {/* Monthly Trends (Side-by-Side Income vs Expense Bars) */}
       {monthlyTrends.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -344,13 +373,17 @@ export default function DashboardScreen() {
               {new Date().getFullYear()}
             </Text>
           </View>
-          <View style={[styles.card, { borderColor: '#e5e7eb' }]}>
-            {/* Total for year */}
-            <View style={styles.yearSummary}>
-              <Text style={[styles.yearSummaryLabel, { color: '#6b7280' }]}>Total This Year</Text>
-              <Text style={[styles.yearSummaryValue, { color: textColor }]}>
-                {formatCurrency(monthlyTrends.reduce((sum, t) => sum + t.totalAmount, 0))}
-              </Text>
+          <View style={[styles.card, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
+            {/* Legend indicators */}
+            <View style={styles.chartLegend}>
+              <View style={styles.chartLegendItem}>
+                <View style={[styles.legendIndicatorDot, { backgroundColor: '#22c55e' }]} />
+                <Text style={[styles.legendIndicatorText, { color: textColor }]}>Income</Text>
+              </View>
+              <View style={styles.chartLegendItem}>
+                <View style={[styles.legendIndicatorDot, { backgroundColor: '#ef4444' }]} />
+                <Text style={[styles.legendIndicatorText, { color: textColor }]}>Expense</Text>
+              </View>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.trendsContainer}>
@@ -358,26 +391,32 @@ export default function DashboardScreen() {
                   const isCurrentMonth = index === monthlyTrends.length - 1;
                   return (
                     <View key={index} style={styles.trendBar}>
-                      <Text style={[styles.trendAmount, { color: isCurrentMonth ? tintColor : textColor, fontWeight: isCurrentMonth ? '600' : '400' }]}>
-                        {formatCompactCurrency(trend.totalAmount)}
-                      </Text>
                       <View style={styles.barContainer}>
+                        {/* Income Bar (green) */}
                         <View
                           style={[
                             styles.bar,
                             {
-                              height: Math.max((trend.totalAmount / maxTrend) * 100, 4),
-                              backgroundColor: isCurrentMonth ? tintColor : '#94a3b8',
-                              opacity: isCurrentMonth ? 1 : 0.6,
+                              height: Math.max(((trend.totalIncome || 0) / maxTrend) * 90, 4),
+                              backgroundColor: '#22c55e',
+                              opacity: isCurrentMonth ? 1 : 0.7,
+                            },
+                          ]}
+                        />
+                        {/* Expense Bar (red) */}
+                        <View
+                          style={[
+                            styles.bar,
+                            {
+                              height: Math.max(((trend.totalExpenses || 0) / maxTrend) * 90, 4),
+                              backgroundColor: '#ef4444',
+                              opacity: isCurrentMonth ? 1 : 0.7,
                             },
                           ]}
                         />
                       </View>
                       <Text style={[styles.trendMonth, { color: isCurrentMonth ? tintColor : textColor, fontWeight: isCurrentMonth ? '600' : '400' }]}>
                         {trend.monthName.slice(0, 3)}
-                      </Text>
-                      <Text style={[styles.trendCount, { color: '#9ca3af' }]}>
-                        {trend.count}
                       </Text>
                     </View>
                   );
@@ -388,12 +427,12 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Recent Expenses */}
+      {/* Recent Transactions */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: textColor }]}>
-          Recent Expenses
+          Recent Transactions
         </Text>
-        <View style={[styles.card, { borderColor: '#e5e7eb' }]}>
+        <View style={[styles.card, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
           {recentExpenses.length > 0 ? (
             recentExpenses.map((expense, index) => (
               <View
@@ -408,17 +447,27 @@ export default function DashboardScreen() {
                     {expense.title}
                   </Text>
                   <Text style={[styles.expenseCategory, { color: textColor, opacity: 0.6 }]}>
-                    {expense.category?.icon || '📦'} {expense.category?.name || 'Uncategorized'} • {formatDate(expense.date)}
+                    {expense.type === 'TRANSFER'
+                      ? `${expense.wallet?.name || 'Source'} ➔ ${expense.toWallet?.name || 'Dest'}`
+                      : `${expense.category?.icon || '📦'} ${expense.category?.name || 'Uncategorized'} • ${expense.wallet?.name || 'Cash'}`
+                    } • {formatDate(expense.date)}
                   </Text>
                 </View>
-                <Text style={[styles.expenseAmount, { color: textColor }]}>
-                  -{formatCurrency(expense.amount, expense.currency)}
+                <Text style={[
+                  styles.expenseAmount, 
+                  { 
+                    color: expense.type === 'INCOME' 
+                      ? '#22c55e' 
+                      : (expense.type === 'TRANSFER' ? '#64748b' : textColor) 
+                  }
+                ]}>
+                  {expense.type === 'INCOME' ? '+' : (expense.type === 'TRANSFER' ? '' : '-')}{formatCurrency(expense.amount)}
                 </Text>
               </View>
             ))
           ) : (
             <Text style={[styles.emptyText, { color: textColor, opacity: 0.6 }]}>
-              No recent expenses. Start tracking!
+              No recent transactions. Start tracking!
             </Text>
           )}
         </View>
@@ -482,35 +531,56 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
   },
+  smallCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   smallCardLabel: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 12,
-    marginBottom: 4,
   },
   smallCardValue: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
-  summaryFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  trendBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 8,
+  // Wallets Slider Styles
+  walletsContainer: {
     paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    gap: 12,
   },
-  trendText: {
-    color: '#fff',
-    fontSize: 12,
+  walletCard: {
+    width: 160,
+    padding: 16,
+    borderRadius: 16,
+    marginRight: 4,
+  },
+  walletHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  walletIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  walletIcon: {
+    fontSize: 16,
+  },
+  walletName: {
+    fontSize: 14,
     fontWeight: '600',
+    flex: 1,
+  },
+  walletBalance: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   section: {
     marginBottom: 24,
@@ -520,6 +590,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  addWalletButton: {
+    padding: 4,
   },
   sectionTitle: {
     fontSize: 18,
@@ -534,7 +607,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  // Expense Trend Card Styles
+  // Trend Card Styles
   trendCard: {
     borderRadius: 16,
     padding: 16,
@@ -678,88 +751,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  // Year Summary
-  yearSummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  yearSummaryLabel: {
-    fontSize: 14,
-  },
-  yearSummaryValue: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  categoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 12,
-  },
   categoryIcon: {
     fontSize: 16,
   },
-  categoryName: {
-    fontSize: 14,
-    flex: 1,
+  // Trends chart
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginBottom: 12,
   },
-  categoryStats: {
-    alignItems: 'flex-end',
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  categoryAmount: {
-    fontSize: 14,
-    fontWeight: '600',
+  legendIndicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  categoryPercent: {
+  legendIndicatorText: {
     fontSize: 12,
-    marginTop: 2,
+    opacity: 0.8,
   },
   trendsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 16,
+    gap: 20,
     paddingVertical: 8,
   },
   trendBar: {
     alignItems: 'center',
-    width: 50,
-  },
-  trendAmount: {
-    fontSize: 10,
-    marginBottom: 4,
+    width: 54,
   },
   barContainer: {
     height: 100,
-    justifyContent: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
     marginBottom: 8,
   },
   bar: {
-    width: 24,
-    borderRadius: 4,
+    width: 10,
+    borderRadius: 3,
     minHeight: 4,
   },
   trendMonth: {
     fontSize: 12,
-  },
-  trendCount: {
-    fontSize: 10,
-    marginTop: 2,
   },
   expenseRow: {
     flexDirection: 'row',

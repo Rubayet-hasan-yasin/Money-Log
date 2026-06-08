@@ -20,6 +20,7 @@ import {
     UpdateExpenseData,
     UpdateProfileData,
     User,
+    Wallet,
 } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError, AxiosInstance } from 'axios';
@@ -197,6 +198,28 @@ class ApiService {
         return response.data;
     }
 
+    // ==================== Wallets API ====================
+
+    async getWallets(): Promise<{ wallets: Wallet[] }> {
+        const response = await this.axiosInstance.get<{ wallets: Wallet[] }>('/wallets');
+        return response.data;
+    }
+
+    async createWallet(data: { name: string; color?: string; icon?: string; balance?: number }): Promise<{ wallet: Wallet; message?: string }> {
+        const response = await this.axiosInstance.post<{ wallet: Wallet; message?: string }>('/wallets', data);
+        return response.data;
+    }
+
+    async updateWallet(id: string, data: { name?: string; color?: string; icon?: string; balance?: number }): Promise<{ wallet: Wallet; message?: string }> {
+        const response = await this.axiosInstance.put<{ wallet: Wallet; message?: string }>(`/wallets/${id}`, data);
+        return response.data;
+    }
+
+    async deleteWallet(id: string): Promise<MessageResponse> {
+        const response = await this.axiosInstance.delete<MessageResponse>(`/wallets/${id}`);
+        return response.data;
+    }
+
     // ==================== Expenses API ====================
 
     async getExpenses(filters: ExpenseFilters = {}): Promise<ExpensesResponse> {
@@ -212,6 +235,8 @@ class ApiService {
         if (filters.search) params.search = filters.search;
         if (filters.minAmount) params.minAmount = filters.minAmount;
         if (filters.maxAmount) params.maxAmount = filters.maxAmount;
+        if (filters.type) params.type = filters.type;
+        if (filters.walletId) params.walletId = filters.walletId;
 
         const response = await this.axiosInstance.get<ExpensesResponse>('/expenses', { params });
         return response.data;

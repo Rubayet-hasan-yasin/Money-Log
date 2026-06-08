@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
+    LayoutAnimation,
     RefreshControl,
     StyleSheet,
     Text,
@@ -19,14 +20,16 @@ export default function CategoriesScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
+  const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
   const fetchCategories = async () => {
     try {
-      const response = await api.getCategories();
+      const response = await api.getCategories(1, 100);
       if (response.categories) {
         setCategories(response.categories);
       }
@@ -92,8 +95,8 @@ export default function CategoriesScreen() {
           </Text>
           <View style={styles.categoryMeta}>
             {item._count?.expenses !== undefined && (
-              <Text style={[styles.categoryExpenseCount, { color: tintColor }]}>
-                {item._count.expenses} expense{item._count.expenses !== 1 ? 's' : ''}
+              <Text style={[styles.categoryExpenseCount, { color: activeTab === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}>
+                {item._count.expenses} transaction{item._count.expenses !== 1 ? 's' : ''}
               </Text>
             )}
             <Text style={[styles.categoryDate, { color: textColor, opacity: 0.5 }]}>
@@ -106,6 +109,8 @@ export default function CategoriesScreen() {
     </TouchableOpacity>
   );
 
+  const filteredCategories = categories.filter(c => (c.type || 'EXPENSE') === activeTab);
+
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor }]}>
@@ -116,8 +121,37 @@ export default function CategoriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
+      {/* Category Type Tabs */}
+      <View style={[styles.segmentContainer, { backgroundColor: cardBg }]}>
+        {(['EXPENSE', 'INCOME'] as const).map((t) => (
+          <TouchableOpacity
+            key={t}
+            style={[
+              styles.segmentButton,
+              activeTab === t && {
+                backgroundColor: t === 'EXPENSE' ? '#ef4444' : '#22c55e',
+              },
+            ]}
+            onPress={() => {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setActiveTab(t);
+            }}
+          >
+            <Text
+              style={[
+                styles.segmentButtonText,
+                { color: textColor },
+                activeTab === t && { color: '#fff', fontWeight: '700' },
+              ]}
+            >
+              {t === 'EXPENSE' ? 'Expense Categories' : 'Income Categories'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <FlatList
-        data={categories}
+        data={filteredCategories}
         renderItem={renderCategory}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
@@ -128,10 +162,10 @@ export default function CategoriesScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="folder-open-outline" size={64} color="#9ca3af" />
             <Text style={[styles.emptyTitle, { color: textColor }]}>
-              No categories yet
+              No {activeTab.toLowerCase()} categories yet
             </Text>
             <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
-              Create categories to organize your expenses
+              Create categories to organize your transactions
             </Text>
           </View>
         }
@@ -139,8 +173,8 @@ export default function CategoriesScreen() {
 
       {/* Add Button */}
       <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: tintColor }]}
-        onPress={() => router.push('/category/new')}
+        style={[styles.addButton, { backgroundColor: activeTab === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}
+        onPress={() => router.push({ pathname: '/category/new', params: { type: activeTab } } as any)}
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
@@ -157,8 +191,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  segmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 4,
+    margin: 16,
+    marginBottom: 8,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  segmentButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   listContent: {
     padding: 16,
+    paddingTop: 8,
   },
   categoryCard: {
     flexDirection: 'row',

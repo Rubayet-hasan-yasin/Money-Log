@@ -74,6 +74,20 @@ function RootLayoutNav() {
             presentation: 'modal',
           }} 
         />
+        <Stack.Screen 
+          name="wallet/[id]" 
+          options={{ 
+            title: 'Account Details',
+            presentation: 'card',
+          }} 
+        />
+        <Stack.Screen 
+          name="wallet/new" 
+          options={{ 
+            title: 'Add Account / Wallet',
+            presentation: 'modal',
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

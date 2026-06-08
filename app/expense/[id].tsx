@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
-import { Category, CURRENCIES } from '@/types';
+import { Category, CURRENCIES, Wallet } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -62,11 +62,14 @@ export default function ExpenseDetailScreen() {
   const isNew = !id || id === 'new';
   
   const [categories, setCategories] = useState<Category[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showWalletPicker, setShowWalletPicker] = useState(false);
+  const [showToWalletPicker, setShowToWalletPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -76,7 +79,10 @@ export default function ExpenseDetailScreen() {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('BDT');
+  const [type, setType] = useState<'EXPENSE' | 'INCOME' | 'TRANSFER'>('EXPENSE');
   const [categoryId, setCategoryId] = useState<string | undefined>();
+  const [walletId, setWalletId] = useState<string>('');
+  const [toWalletId, setToWalletId] = useState<string>('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -87,9 +93,24 @@ export default function ExpenseDetailScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const categoriesRes = await api.getCategories();
+      const [categoriesRes, walletsRes] = await Promise.all([
+        api.getCategories(1, 100),
+        api.getWallets()
+      ]);
+
       if (categoriesRes.categories) {
         setCategories(categoriesRes.categories);
+      }
+      if (walletsRes.wallets) {
+        setWallets(walletsRes.wallets);
+        
+        // Auto-select Cash wallet if it exists, otherwise the first wallet
+        const cash = walletsRes.wallets.find(w => w.name === 'Cash');
+        if (cash) {
+          setWalletId(cash.id);
+        } else if (walletsRes.wallets.length > 0) {
+          setWalletId(walletsRes.wallets[0].id);
+        }
       }
 
       if (!isNew && id) {
@@ -98,15 +119,18 @@ export default function ExpenseDetailScreen() {
           const exp = expenseRes.expense;
           setTitle(exp.title);
           setAmount(exp.amount.toString());
-          setCurrency(exp.currency || 'USD');
-          setCategoryId(exp.categoryId);
+          setCurrency(exp.currency || 'BDT');
+          setType(exp.type || 'EXPENSE');
+          setCategoryId(exp.categoryId || undefined);
+          setWalletId(exp.walletId || '');
+          setToWalletId(exp.toWalletId || '');
           setDescription(exp.description || '');
           setDate(exp.date.split('T')[0]);
         }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Failed to load expense');
+      Alert.alert('Error', 'Failed to load details');
     } finally {
       setIsLoading(false);
     }
@@ -121,13 +145,30 @@ export default function ExpenseDetailScreen() {
   const validate = () => {
     if (!title.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Missing Title', 'Please enter a title for your expense');
+      Alert.alert('Missing Title', 'Please enter a title');
       return false;
     }
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Invalid Amount', 'Please enter a valid amount greater than 0');
       return false;
+    }
+    if (!walletId) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Missing Wallet', 'Please select a wallet');
+      return false;
+    }
+    if (type === 'TRANSFER') {
+      if (!toWalletId) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('Missing Destination', 'Please select a destination wallet');
+        return false;
+      }
+      if (walletId === toWalletId) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('Invalid Transfer', 'Source and destination wallets must be different');
+        return false;
+      }
     }
     if (!date) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -146,7 +187,10 @@ export default function ExpenseDetailScreen() {
         title: title.trim(),
         amount: parseFloat(amount),
         currency,
-        categoryId,
+        type,
+        walletId,
+        toWalletId: type === 'TRANSFER' ? toWalletId : undefined,
+        categoryId: type === 'TRANSFER' ? undefined : categoryId,
         description: description.trim() || undefined,
         date,
       };
@@ -163,7 +207,7 @@ export default function ExpenseDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : 'Failed to save expense'
+        error instanceof Error ? error.message : 'Failed to save transaction'
       );
     } finally {
       setIsSaving(false);
@@ -199,7 +243,7 @@ export default function ExpenseDetailScreen() {
       }
     } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to delete expense');
+      Alert.alert('Error', 'Failed to delete transaction');
       setIsDeleting(false);
       handleCancelDelete();
     }
@@ -210,20 +254,41 @@ export default function ExpenseDetailScreen() {
     setTitle('');
     setAmount('');
     setCurrency('BDT');
+    setType('EXPENSE');
     setCategoryId(undefined);
+    const cash = wallets.find(w => w.name === 'Cash');
+    setWalletId(cash ? cash.id : (wallets[0]?.id || ''));
+    setToWalletId('');
     setDescription('');
     setDate(new Date().toISOString().split('T')[0]);
   };
 
   const selectedCategory = categories.find(c => c.id === categoryId);
+  const selectedWallet = wallets.find(w => w.id === walletId);
+  const selectedToWallet = wallets.find(w => w.id === toWalletId);
   const selectedCurrency = CURRENCIES.find(c => c.code === currency);
   const displayAmount = amount ? parseFloat(amount) : 0;
+
+  // Filter categories shown in selection modal
+  const filteredCategories = categories.filter(c => c.type === type);
+
+  const getHeaderColor = () => {
+    if (type === 'INCOME') return '#22c55e';
+    if (type === 'TRANSFER') return '#64748b';
+    return '#ef4444'; // EXPENSE
+  };
+
+  const getAmountSymbol = () => {
+    if (type === 'INCOME') return '+';
+    if (type === 'TRANSFER') return '⇄';
+    return '-'; // EXPENSE
+  };
 
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor }]}>
         <ActivityIndicator size="large" color={tintColor} />
-        <Text style={[styles.loadingText, { color: textColor }]}>Loading expense...</Text>
+        <Text style={[styles.loadingText, { color: textColor }]}>Loading...</Text>
       </View>
     );
   }
@@ -238,21 +303,69 @@ export default function ExpenseDetailScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Transaction Type Segment Control */}
+        <View style={[styles.segmentContainer, { backgroundColor: cardBg }]}>
+          {(['EXPENSE', 'INCOME', 'TRANSFER'] as const).map((t) => (
+            <TouchableOpacity
+              key={t}
+              style={[
+                styles.segmentButton,
+                type === t && {
+                  backgroundColor: t === 'EXPENSE' ? '#ef4444' : t === 'INCOME' ? '#22c55e' : '#64748b',
+                },
+              ]}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                Haptics.selectionAsync();
+                setType(t);
+                // Reset category/wallets logically
+                if (t === 'TRANSFER') {
+                  setCategoryId(undefined);
+                  if (walletId && walletId === toWalletId) {
+                    setToWalletId('');
+                  }
+                } else {
+                  setToWalletId('');
+                }
+              }}
+            >
+              <Text
+                style={[
+                  styles.segmentButtonText,
+                  { color: textColor },
+                  type === t && { color: '#fff', fontWeight: '700' },
+                ]}
+              >
+                {t}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Amount Preview Card */}
-        <View style={[styles.amountCard, { backgroundColor: '#6366f1' }]}>
+        <View style={[styles.amountCard, { backgroundColor: getHeaderColor() }]}>
           <Text style={[styles.amountLabel, { color: 'rgba(255,255,255,0.8)' }]}>
-            {isNew ? 'New Expense' : 'Edit Expense'}
+            {isNew ? `New ${type.toLowerCase()}` : `Edit ${type.toLowerCase()}`}
           </Text>
           <View style={styles.amountDisplay}>
-            <Text style={[styles.amountSymbol, { color: '#fff' }]}>{selectedCurrency?.symbol || '৳'}</Text>
+            <Text style={[styles.amountSymbol, { color: '#fff' }]}>
+              {getAmountSymbol()} {selectedCurrency?.symbol || '৳'}
+            </Text>
             <Text style={[styles.amountValue, { color: '#fff' }]}>
               {displayAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
           </View>
-          {selectedCategory && (
+          {type !== 'TRANSFER' && selectedCategory && (
             <View style={[styles.categoryBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
               <Text style={styles.categoryBadgeIcon}>{selectedCategory.icon || '📦'}</Text>
               <Text style={[styles.categoryBadgeText, { color: '#fff' }]}>{selectedCategory.name}</Text>
+            </View>
+          )}
+          {type === 'TRANSFER' && selectedWallet && selectedToWallet && (
+            <View style={[styles.categoryBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+              <Text style={[styles.categoryBadgeText, { color: '#fff' }]}>
+                {selectedWallet.name} ➔ {selectedToWallet.name}
+              </Text>
             </View>
           )}
         </View>
@@ -270,7 +383,7 @@ export default function ExpenseDetailScreen() {
                 style={[styles.inputField, { color: textColor }]}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="What did you spend on?"
+                placeholder={type === 'TRANSFER' ? "e.g., Transfer to pocket money" : "What is this transaction for?"}
                 placeholderTextColor="#9ca3af"
               />
             </View>
@@ -307,31 +420,95 @@ export default function ExpenseDetailScreen() {
 
           <View style={styles.divider} />
 
-          {/* Category Selector */}
+          {/* Source Wallet Selector */}
           <Pressable 
             style={styles.inputRow}
-            onPress={() => setShowCategoryPicker(true)}
+            onPress={() => setShowWalletPicker(true)}
           >
-            <View style={[styles.inputIcon, { backgroundColor: '#8b5cf620' }]}>
-              <Ionicons name="folder" size={20} color="#8b5cf6" />
+            <View style={[styles.inputIcon, { backgroundColor: '#6366f120' }]}>
+              <Ionicons name="wallet" size={20} color="#6366f1" />
             </View>
             <View style={styles.inputWrapper}>
-              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Category</Text>
-              {selectedCategory ? (
+              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>
+                {type === 'TRANSFER' ? 'From Wallet (Source)' : 'Account / Wallet'}
+              </Text>
+              {selectedWallet ? (
                 <View style={styles.selectedCategoryRow}>
-                  <Text style={styles.selectedCategoryIcon}>{selectedCategory.icon || '📦'}</Text>
+                  <Text style={styles.selectedCategoryIcon}>{selectedWallet.icon || '💵'}</Text>
                   <Text style={[styles.inputField, { color: textColor }]}>
-                    {selectedCategory.name}
+                    {selectedWallet.name} (৳{selectedWallet.balance.toFixed(2)})
                   </Text>
                 </View>
               ) : (
                 <Text style={[styles.inputField, { color: '#9ca3af' }]}>
-                  Select a category
+                  Select a wallet
                 </Text>
               )}
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </Pressable>
+
+          {type === 'TRANSFER' && (
+            <>
+              <View style={styles.divider} />
+              {/* Destination Wallet Selector */}
+              <Pressable 
+                style={styles.inputRow}
+                onPress={() => setShowToWalletPicker(true)}
+              >
+                <View style={[styles.inputIcon, { backgroundColor: '#8b5cf620' }]}>
+                  <Ionicons name="arrow-forward-circle" size={20} color="#8b5cf6" />
+                </View>
+                <View style={styles.inputWrapper}>
+                  <Text style={[styles.inputLabel, { color: '#6b7280' }]}>To Wallet (Destination)</Text>
+                  {selectedToWallet ? (
+                    <View style={styles.selectedCategoryRow}>
+                      <Text style={styles.selectedCategoryIcon}>{selectedToWallet.icon || '💵'}</Text>
+                      <Text style={[styles.inputField, { color: textColor }]}>
+                        {selectedToWallet.name} (৳{selectedToWallet.balance.toFixed(2)})
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.inputField, { color: '#9ca3af' }]}>
+                      Select destination wallet
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              </Pressable>
+            </>
+          )}
+
+          {type !== 'TRANSFER' && (
+            <>
+              <View style={styles.divider} />
+              {/* Category Selector */}
+              <Pressable 
+                style={styles.inputRow}
+                onPress={() => setShowCategoryPicker(true)}
+              >
+                <View style={[styles.inputIcon, { backgroundColor: '#8b5cf620' }]}>
+                  <Ionicons name="folder" size={20} color="#8b5cf6" />
+                </View>
+                <View style={styles.inputWrapper}>
+                  <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Category</Text>
+                  {selectedCategory ? (
+                    <View style={styles.selectedCategoryRow}>
+                      <Text style={styles.selectedCategoryIcon}>{selectedCategory.icon || '📦'}</Text>
+                      <Text style={[styles.inputField, { color: textColor }]}>
+                        {selectedCategory.name}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.inputField, { color: '#9ca3af' }]}>
+                      Select a category
+                    </Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              </Pressable>
+            </>
+          )}
 
           <View style={styles.divider} />
 
@@ -377,7 +554,7 @@ export default function ExpenseDetailScreen() {
         {/* Action Buttons */}
         <View style={styles.actionSection}>
           <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: '#22c55e' }, isSaving && styles.buttonDisabled]}
+            style={[styles.saveButton, { backgroundColor: getHeaderColor() }, isSaving && styles.buttonDisabled]}
             onPress={handleSave}
             disabled={isSaving}
             activeOpacity={0.8}
@@ -388,7 +565,7 @@ export default function ExpenseDetailScreen() {
               <View style={styles.saveButtonContent}>
                 <Ionicons name={isNew ? "add-circle" : "checkmark-circle"} size={22} color="#fff" />
                 <Text style={styles.saveButtonText}>
-                  {isNew ? 'Add Expense' : 'Save Changes'}
+                  {isNew ? `Add ${type.charAt(0) + type.slice(1).toLowerCase()}` : 'Save Changes'}
                 </Text>
               </View>
             )}
@@ -410,7 +587,7 @@ export default function ExpenseDetailScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="trash-outline" size={20} color="#ef4444" />
-              <Text style={styles.deleteButtonOutlineText}>Delete Expense</Text>
+              <Text style={styles.deleteButtonOutlineText}>Delete Transaction</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -438,10 +615,10 @@ export default function ExpenseDetailScreen() {
               <Ionicons name="warning" size={48} color="#ef4444" />
             </View>
             <Text style={[styles.deleteModalTitle, { color: textColor }]}>
-              Delete Expense?
+              Delete Transaction?
             </Text>
             <Text style={[styles.deleteModalMessage, { color: '#6b7280' }]}>
-              This action cannot be undone. The expense &quot;{title}&quot; will be permanently removed.
+              This action cannot be undone. The transaction &quot;{title}&quot; will be permanently removed.
             </Text>
             <View style={styles.deleteModalActions}>
               <TouchableOpacity
@@ -665,6 +842,118 @@ export default function ExpenseDetailScreen() {
         </View>
       </Modal>
 
+      {/* Wallet Picker Modal */}
+      <Modal
+        visible={showWalletPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowWalletPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: textColor }]}>Select Wallet</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setShowWalletPicker(false)}
+              >
+                <Ionicons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={wallets}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item: w }) => {
+                const isSelected = walletId === w.id;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.modalOptionItem,
+                      isSelected && { backgroundColor: tintColor + '15' },
+                    ]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setWalletId(w.id);
+                      setShowWalletPicker(false);
+                    }}
+                  >
+                    <View style={styles.modalOptionLeft}>
+                      <View style={[styles.currencySymbolBadge, { backgroundColor: (w.color || tintColor) + '20' }]}>
+                        <Text style={styles.categoryBadgeIcon}>{w.icon || '💵'}</Text>
+                      </View>
+                      <View>
+                        <Text style={[styles.currencyCode, { color: textColor }]}>{w.name}</Text>
+                        <Text style={[styles.currencyName, { color: '#6b7280' }]}>৳{w.balance.toFixed(2)}</Text>
+                      </View>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={24} color={tintColor} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Destination Wallet Picker Modal */}
+      <Modal
+        visible={showToWalletPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowToWalletPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: textColor }]}>Select Destination Wallet</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setShowToWalletPicker(false)}
+              >
+                <Ionicons name="close" size={24} color={textColor} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={wallets}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item: w }) => {
+                const isSelected = toWalletId === w.id;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.modalOptionItem,
+                      isSelected && { backgroundColor: tintColor + '15' },
+                    ]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setToWalletId(w.id);
+                      setShowToWalletPicker(false);
+                    }}
+                  >
+                    <View style={styles.modalOptionLeft}>
+                      <View style={[styles.currencySymbolBadge, { backgroundColor: (w.color || tintColor) + '20' }]}>
+                        <Text style={styles.categoryBadgeIcon}>{w.icon || '💵'}</Text>
+                      </View>
+                      <View>
+                        <Text style={[styles.currencyCode, { color: textColor }]}>{w.name}</Text>
+                        <Text style={[styles.currencyName, { color: '#6b7280' }]}>৳{w.balance.toFixed(2)}</Text>
+                      </View>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={24} color={tintColor} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
       {/* Category Picker Modal */}
       <Modal
         visible={showCategoryPicker}
@@ -684,7 +973,7 @@ export default function ExpenseDetailScreen() {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={[{ id: '', name: 'No Category', icon: '📦', color: '#6b7280', userId: '', createdAt: '', updatedAt: '' } as Category, ...categories]}
+              data={[{ id: '', name: 'No Category', icon: '📦', color: '#6b7280', userId: '', createdAt: '', updatedAt: '' } as Category, ...filteredCategories]}
               keyExtractor={(item) => item.id || 'none'}
               showsVerticalScrollIndicator={false}
               numColumns={2}
@@ -696,7 +985,7 @@ export default function ExpenseDetailScreen() {
                     style={[
                       styles.categoryGridItem,
                       { backgroundColor: cardBg },
-                      isSelected && { borderColor: tintColor, borderWidth: 2 },
+                      isSelected && { borderColor: getHeaderColor(), borderWidth: 2 },
                     ]}
                     onPress={() => {
                       Haptics.selectionAsync();
@@ -712,7 +1001,7 @@ export default function ExpenseDetailScreen() {
                       {cat.name}
                     </Text>
                     {isSelected && (
-                      <View style={[styles.categoryCheckmark, { backgroundColor: tintColor }]}>
+                      <View style={[styles.categoryCheckmark, { backgroundColor: getHeaderColor() }]}>
                         <Ionicons name="checkmark" size={12} color="#fff" />
                       </View>
                     )}
@@ -723,16 +1012,16 @@ export default function ExpenseDetailScreen() {
                 <View style={styles.emptyCategories}>
                   <Ionicons name="folder-open-outline" size={48} color="#9ca3af" />
                   <Text style={[styles.emptyCategoriesText, { color: '#6b7280' }]}>
-                    No categories yet
+                    No categories of type {type.toLowerCase()} yet
                   </Text>
                   <TouchableOpacity
-                    style={[styles.createCategoryButton, { backgroundColor: tintColor }]}
+                    style={[styles.createCategoryButton, { borderColor: tintColor }]}
                     onPress={() => {
                       setShowCategoryPicker(false);
                       router.push('/category/new');
                     }}
                   >
-                    <Text style={styles.createCategoryButtonText}>Create Category</Text>
+                    <Text style={[styles.createCategoryButtonText, { color: tintColor }]}>Create Category</Text>
                   </TouchableOpacity>
                 </View>
               }
@@ -761,61 +1050,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-  },
-  pickerText: {
-    fontSize: 16,
-  },
-  categoryDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  categoryEmoji: {
-    fontSize: 18,
-  },
-  optionsList: {
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 20,
-    maxHeight: 200,
-  },
-  optionItem: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  optionText: {
-    fontSize: 14,
-  },
   saveButton: {
     padding: 16,
     borderRadius: 12,
@@ -827,19 +1061,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  deleteButton: {
+  // Segment Control
+  segmentContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 1,
     borderRadius: 12,
-    marginTop: 16,
-    gap: 8,
+    padding: 4,
+    marginBottom: 20,
   },
-  deleteButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  segmentButtonText: {
+    fontSize: 14,
     fontWeight: '600',
   },
   // Modal styles
@@ -891,14 +1127,6 @@ const styles = StyleSheet.create({
   currencyName: {
     fontSize: 13,
   },
-  categoryModalIcon: {
-    fontSize: 24,
-    width: 40,
-    textAlign: 'center',
-  },
-  categoryModalName: {
-    fontSize: 16,
-  },
   emptyCategories: {
     padding: 32,
     alignItems: 'center',
@@ -906,6 +1134,7 @@ const styles = StyleSheet.create({
   emptyCategoriesText: {
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 12,
   },
   // Amount Card styles
   amountCard: {
@@ -1170,6 +1399,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   createCategoryButton: {
     flexDirection: 'row',

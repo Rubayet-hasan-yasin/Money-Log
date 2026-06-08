@@ -39,12 +39,25 @@ export interface UpdateProfileData {
   password?: string;
 }
 
+// Wallet types
+export interface Wallet {
+  id: string;
+  name: string;
+  color?: string;
+  icon?: string;
+  balance: number;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Category types
 export interface Category {
   id: string;
   name: string;
   color?: string;
   icon?: string;
+  type?: 'EXPENSE' | 'INCOME';
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -57,12 +70,14 @@ export interface CreateCategoryData {
   name: string;
   color?: string;
   icon?: string;
+  type?: 'EXPENSE' | 'INCOME';
 }
 
 export interface UpdateCategoryData {
   name?: string;
   color?: string;
   icon?: string;
+  type?: 'EXPENSE' | 'INCOME';
 }
 
 // Expense types
@@ -76,6 +91,11 @@ export interface Expense {
   categoryId?: string;
   category?: Category;
   userId: string;
+  type: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  walletId?: string;
+  wallet?: Wallet;
+  toWalletId?: string;
+  toWallet?: Wallet;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,6 +107,9 @@ export interface CreateExpenseData {
   categoryId?: string;
   description?: string;
   date: string;
+  type?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  walletId?: string;
+  toWalletId?: string;
 }
 
 export interface UpdateExpenseData {
@@ -96,6 +119,9 @@ export interface UpdateExpenseData {
   categoryId?: string;
   description?: string;
   date?: string;
+  type?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  walletId?: string;
+  toWalletId?: string;
 }
 
 export interface ExpenseFilters {
@@ -109,6 +135,8 @@ export interface ExpenseFilters {
   search?: string;
   minAmount?: number;
   maxAmount?: number;
+  type?: 'EXPENSE' | 'INCOME' | 'TRANSFER';
+  walletId?: string;
 }
 
 // Dashboard types
@@ -116,7 +144,9 @@ export interface DashboardSummary {
   totalAmount: number;
   totalCount: number;
   averageExpense: number;
-  categoryBreakdown: Record<string, number>;
+  totalIncome: number;
+  netBalance: number;
+  categoryBreakdown: Record<'EXPENSE' | 'INCOME', Record<string, number>>;
 }
 
 // Dashboard response wrappers (actual backend format)
@@ -160,7 +190,11 @@ export interface MonthlyTrend {
   month: number;
   monthName: string;
   totalAmount: number;
+  totalExpenses?: number;
+  totalIncome?: number;
   count: number;
+  expenseCount?: number;
+  incomeCount?: number;
 }
 
 // API Response types (for endpoints that use success/data wrapper)

@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
-import { Category, CURRENCIES, Expense, ExpenseFilters } from '@/types';
+import { Category, CURRENCIES, Expense, ExpenseFilters, Wallet } from '@/types';
 import { DateRangeType, exportToCSV, formatDate, getDateRange } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageAccessFramework } from 'expo-file-system/legacy';
@@ -35,6 +35,7 @@ const DATE_FILTERS: { label: string; value: DateRangeType }[] = [
 export default function ExpensesScreen() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [page, setPage] = useState(1);
@@ -44,6 +45,8 @@ export default function ExpensesScreen() {
   // New filter states
   const [selectedDateFilter, setSelectedDateFilter] = useState<DateRangeType>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedWallet, setSelectedWallet] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [showFilters, setShowFilters] = useState(false);
@@ -71,13 +74,21 @@ export default function ExpensesScreen() {
     if (selectedCategory) {
       filters.category = selectedCategory;
     }
+
+    if (selectedType) {
+      filters.type = selectedType as any;
+    }
+
+    if (selectedWallet) {
+      filters.walletId = selectedWallet;
+    }
     
     if (searchQuery.trim()) {
       filters.search = searchQuery.trim();
     }
     
     return filters;
-  }, [selectedDateFilter, selectedCategory, sortBy, sortOrder, searchQuery]);
+  }, [selectedDateFilter, selectedCategory, selectedType, selectedWallet, sortBy, sortOrder, searchQuery]);
 
   const fetchExpenses = async (pageNum = 1, refresh = false) => {
     try {
@@ -112,12 +123,24 @@ export default function ExpensesScreen() {
     }
   };
 
+  const fetchWallets = async () => {
+    try {
+      const response = await api.getWallets();
+      if (response.wallets) {
+        setWallets(response.wallets);
+      }
+    } catch (error) {
+      console.error('Error fetching wallets:', error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchExpenses(1, true);
       fetchCategories();
+      fetchWallets();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDateFilter, selectedCategory, sortBy, sortOrder])
+    }, [selectedDateFilter, selectedCategory, selectedType, selectedWallet, sortBy, sortOrder])
   );
 
   const onRefresh = () => {
@@ -138,36 +161,13 @@ export default function ExpensesScreen() {
     fetchExpenses(1, true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleSingleDelete = (expense: Expense) => {
-    Alert.alert(
-      'Delete Expense',
-      `Are you sure you want to delete "${expense.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.deleteExpense(expense.id);
-              setExpenses(prev => prev.filter(e => e.id !== expense.id));
-            } catch {
-              Alert.alert('Error', 'Failed to delete expense');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   // Bulk delete functionality
   const handleBulkDelete = () => {
     if (selectedExpenses.length === 0) return;
     
     Alert.alert(
-      'Delete Expenses',
-      `Are you sure you want to delete ${selectedExpenses.length} expense(s)?`,
+      'Delete Transactions',
+      `Are you sure you want to delete ${selectedExpenses.length} transaction(s)?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -175,19 +175,17 @@ export default function ExpensesScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Try bulk delete first, fallback to individual deletes
               try {
                 await api.bulkDeleteExpenses(selectedExpenses);
               } catch {
-                // If bulk delete not available, delete one by one
                 await Promise.all(selectedExpenses.map(id => api.deleteExpense(id)));
               }
               setExpenses(prev => prev.filter(e => !selectedExpenses.includes(e.id)));
               setSelectedExpenses([]);
               setIsSelectionMode(false);
-              Alert.alert('Success', `${selectedExpenses.length} expense(s) deleted`);
+              Alert.alert('Success', `${selectedExpenses.length} transaction(s) deleted`);
             } catch {
-              Alert.alert('Error', 'Failed to delete expenses');
+              Alert.alert('Error', 'Failed to delete transactions');
             }
           },
         },
@@ -211,7 +209,7 @@ export default function ExpensesScreen() {
     }
   };
 
-  // Export to CSV - Direct save to Downloads using Storage Access Framework
+  // Export to CSV
   const handleExportCSV = async () => {
     try {
       const dataToExport = selectedExpenses.length > 0 
@@ -219,7 +217,7 @@ export default function ExpensesScreen() {
         : expenses;
       
       if (dataToExport.length === 0) {
-        Alert.alert('No Data', 'There are no expenses to export');
+        Alert.alert('No Data', 'There are no transactions to export');
         return;
       }
 
@@ -228,7 +226,10 @@ export default function ExpensesScreen() {
           title: e.title,
           amount: e.amount,
           currency: e.currency,
-          category: e.category?.name || 'Uncategorized',
+          type: e.type,
+          category: e.type === 'TRANSFER' ? 'Transfer' : (e.category?.name || 'Uncategorized'),
+          wallet: e.wallet?.name || 'Cash',
+          toWallet: e.type === 'TRANSFER' ? (e.toWallet?.name || '') : '',
           date: formatDate(e.date),
           description: e.description || '',
         })),
@@ -236,18 +237,19 @@ export default function ExpensesScreen() {
           { key: 'title', label: 'Title' },
           { key: 'amount', label: 'Amount' },
           { key: 'currency', label: 'Currency' },
+          { key: 'type', label: 'Type' },
           { key: 'category', label: 'Category' },
+          { key: 'wallet', label: 'Wallet/Account' },
+          { key: 'toWallet', label: 'To Wallet' },
           { key: 'date', label: 'Date' },
           { key: 'description', label: 'Description' },
         ],
-        'expenses'
+        'transactions'
       );
 
-      // Generate filename with timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const filename = `expenses_${timestamp}.csv`;
+      const filename = `transactions_${timestamp}.csv`;
 
-      // Request permission to access a directory (user picks folder)
       const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
       
       if (!permissions.granted) {
@@ -255,36 +257,45 @@ export default function ExpensesScreen() {
         return;
       }
 
-      // Create the file in the selected directory
       const fileUri = await StorageAccessFramework.createFileAsync(
         permissions.directoryUri,
         filename,
         'text/csv'
       );
 
-      // Write content to the file
       await StorageAccessFramework.writeAsStringAsync(fileUri, csv);
 
-      Alert.alert('Success', `Expenses exported to ${filename}`);
+      Alert.alert('Success', `Transactions exported to ${filename}`);
       
-      // Clear selection after export
       if (selectedExpenses.length > 0) {
         setSelectedExpenses([]);
         setIsSelectionMode(false);
       }
     } catch (error) {
       console.error('Export error:', error);
-      Alert.alert('Error', 'Failed to export expenses. Please try again.');
+      Alert.alert('Error', 'Failed to export transactions. Please try again.');
     }
   };
 
-  const formatCurrencyValue = (amount: number, currency = 'USD') => {
+  const formatCurrencyValue = (amount: number, currency = 'BDT') => {
     const curr = CURRENCIES.find(c => c.code === currency);
-    return `${curr?.symbol || '$'}${amount.toFixed(2)}`;
+    return `${curr?.symbol || '৳'}${amount.toFixed(2)}`;
   };
 
   const formatDateValue = (dateString: string) => {
     return formatDate(dateString, 'medium');
+  };
+
+  const getTransactionColor = (item: Expense) => {
+    if (item.type === 'INCOME') return '#22c55e';
+    if (item.type === 'TRANSFER') return '#64748b';
+    return '#ef4444'; // EXPENSE
+  };
+
+  const getTransactionPrefix = (item: Expense) => {
+    if (item.type === 'INCOME') return '+';
+    if (item.type === 'TRANSFER') return '⇄ ';
+    return '-'; // EXPENSE
   };
 
   const renderExpense = ({ item }: { item: Expense }) => (
@@ -319,11 +330,15 @@ export default function ExpensesScreen() {
         <View
           style={[
             styles.categoryIcon,
-            { backgroundColor: item.category?.color || '#6b7280' },
+            { 
+              backgroundColor: item.type === 'TRANSFER' 
+                ? '#64748b' 
+                : (item.type === 'INCOME' ? '#22c55e' : (item.category?.color || '#ef4444'))
+            },
           ]}
         >
           <Text style={styles.categoryEmoji}>
-            {item.category?.icon || '📦'}
+            {item.type === 'TRANSFER' ? '⇄' : (item.category?.icon || (item.type === 'INCOME' ? '💵' : '📋'))}
           </Text>
         </View>
         <View style={styles.expenseInfo}>
@@ -331,7 +346,10 @@ export default function ExpensesScreen() {
             {item.title}
           </Text>
           <Text style={[styles.expenseCategory, { color: textColor, opacity: 0.6 }]}>
-            {item.category?.name || 'Uncategorized'} • {formatDateValue(item.date)}
+            {item.type === 'TRANSFER'
+              ? `${item.wallet?.name || 'Source'} ➔ ${item.toWallet?.name || 'Dest'}`
+              : `${item.category?.name || 'No Category'} • ${item.wallet?.name || 'Cash'}`
+            } • {formatDateValue(item.date)}
           </Text>
           {item.description && (
             <Text
@@ -343,8 +361,8 @@ export default function ExpensesScreen() {
           )}
         </View>
       </View>
-      <Text style={[styles.expenseAmount, { color: '#ef4444' }]}>
-        -{formatCurrencyValue(item.amount, item.currency)}
+      <Text style={[styles.expenseAmount, { color: getTransactionColor(item) }]}>
+        {getTransactionPrefix(item)}{formatCurrencyValue(item.amount, item.currency)}
       </Text>
     </TouchableOpacity>
   );
@@ -432,7 +450,7 @@ export default function ExpensesScreen() {
           <Ionicons name="search" size={20} color="#9ca3af" />
           <TextInput
             style={[styles.searchInput, { color: textColor }]}
-            placeholder="Search expenses..."
+            placeholder="Search transactions..."
             placeholderTextColor="#9ca3af"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -467,10 +485,10 @@ export default function ExpensesScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={64} color="#9ca3af" />
             <Text style={[styles.emptyTitle, { color: textColor }]}>
-              No expenses yet
+              No transactions yet
             </Text>
             <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
-              Tap the + button to add your first expense
+              Tap the + button to add your first transaction
             </Text>
           </View>
         }
@@ -502,40 +520,109 @@ export default function ExpensesScreen() {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            {/* Category Filter */}
+            {/* Transaction Type Filter */}
             <View style={styles.filterSection}>
-              <Text style={[styles.filterLabel, { color: textColor }]}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <Text style={[styles.filterLabel, { color: textColor }]}>Transaction Type</Text>
+              <View style={styles.sortOptions}>
+                {[
+                  { label: 'All', value: '' },
+                  { label: 'Expense', value: 'EXPENSE' },
+                  { label: 'Income', value: 'INCOME' },
+                  { label: 'Transfer', value: 'TRANSFER' }
+                ].map(opt => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[
+                      styles.sortOption,
+                      selectedType === opt.value && { backgroundColor: tintColor },
+                      selectedType !== opt.value && { borderColor: '#e5e7eb', borderWidth: 1 },
+                    ]}
+                    onPress={() => {
+                      setSelectedType(opt.value);
+                      setSelectedCategory(''); // Reset category filter since category types vary
+                    }}
+                  >
+                    <Text style={[styles.sortOptionText, selectedType === opt.value ? { color: '#fff' } : { color: textColor }]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Wallet Filter */}
+            <View style={styles.filterSection}>
+              <Text style={[styles.filterLabel, { color: textColor }]}>Wallet / Account</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 <TouchableOpacity
                   style={[
                     styles.categoryPill,
-                    !selectedCategory && { backgroundColor: tintColor },
-                    selectedCategory && { borderColor: '#e5e7eb', borderWidth: 1 },
+                    !selectedWallet && { backgroundColor: tintColor },
+                    selectedWallet && { borderColor: '#e5e7eb', borderWidth: 1 },
                   ]}
-                  onPress={() => setSelectedCategory('')}
+                  onPress={() => setSelectedWallet('')}
                 >
-                  <Text style={[styles.categoryPillText, !selectedCategory ? { color: '#fff' } : { color: textColor }]}>
+                  <Text style={[styles.categoryPillText, !selectedWallet ? { color: '#fff' } : { color: textColor }]}>
                     All
                   </Text>
                 </TouchableOpacity>
-                {categories.map(cat => (
+                {wallets.map(w => (
                   <TouchableOpacity
-                    key={cat.id}
+                    key={w.id}
                     style={[
                       styles.categoryPill,
-                      selectedCategory === cat.id && { backgroundColor: tintColor },
-                      selectedCategory !== cat.id && { borderColor: '#e5e7eb', borderWidth: 1 },
+                      selectedWallet === w.id && { backgroundColor: tintColor },
+                      selectedWallet !== w.id && { borderColor: '#e5e7eb', borderWidth: 1 },
                     ]}
-                    onPress={() => setSelectedCategory(cat.id)}
+                    onPress={() => setSelectedWallet(w.id)}
                   >
-                    <Text style={styles.categoryPillIcon}>{cat.icon || '📦'}</Text>
-                    <Text style={[styles.categoryPillText, selectedCategory === cat.id ? { color: '#fff' } : { color: textColor }]}>
-                      {cat.name}
+                    <Text style={styles.categoryPillIcon}>{w.icon || '💵'}</Text>
+                    <Text style={[styles.categoryPillText, selectedWallet === w.id ? { color: '#fff' } : { color: textColor }]}>
+                      {w.name}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
+
+            {/* Category Filter */}
+            {selectedType !== 'TRANSFER' && (
+              <View style={styles.filterSection}>
+                <Text style={[styles.filterLabel, { color: textColor }]}>Category</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.categoryPill,
+                      !selectedCategory && { backgroundColor: tintColor },
+                      selectedCategory && { borderColor: '#e5e7eb', borderWidth: 1 },
+                    ]}
+                    onPress={() => setSelectedCategory('')}
+                  >
+                    <Text style={[styles.categoryPillText, !selectedCategory ? { color: '#fff' } : { color: textColor }]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  {categories
+                    .filter(cat => !selectedType || cat.type === selectedType)
+                    .map(cat => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[
+                          styles.categoryPill,
+                          selectedCategory === cat.id && { backgroundColor: tintColor },
+                          selectedCategory !== cat.id && { borderColor: '#e5e7eb', borderWidth: 1 },
+                        ]}
+                        onPress={() => setSelectedCategory(cat.id)}
+                      >
+                        <Text style={styles.categoryPillIcon}>{cat.icon || '📦'}</Text>
+                        <Text style={[styles.categoryPillText, selectedCategory === cat.id ? { color: '#fff' } : { color: textColor }]}>
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Sort By */}
             <View style={styles.filterSection}>
@@ -598,6 +685,8 @@ export default function ExpensesScreen() {
               style={[styles.resetButton, { borderColor: '#e5e7eb' }]}
               onPress={() => {
                 setSelectedCategory('');
+                setSelectedType('');
+                setSelectedWallet('');
                 setSortBy('date');
                 setSortOrder('desc');
                 setSelectedDateFilter('all');
@@ -799,7 +888,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  // Modal styles
   modalContainer: {
     flex: 1,
   },
@@ -807,18 +895,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   modalContent: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
   filterSection: {
     marginBottom: 24,
@@ -831,14 +918,14 @@ const styles = StyleSheet.create({
   categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 20,
     marginRight: 8,
-    gap: 6,
   },
   categoryPillIcon: {
     fontSize: 16,
+    marginRight: 6,
   },
   categoryPillText: {
     fontSize: 14,
@@ -847,14 +934,14 @@ const styles = StyleSheet.create({
   sortOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   sortOption: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     gap: 6,
   },
   sortOptionText: {
@@ -863,15 +950,15 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     flexDirection: 'row',
-    padding: 20,
-    gap: 12,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
+    gap: 12,
   },
   resetButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
   },
@@ -881,8 +968,8 @@ const styles = StyleSheet.create({
   },
   applyButton: {
     flex: 2,
-    paddingVertical: 14,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
   applyButtonText: {

@@ -18,7 +18,7 @@ import {
     View,
 } from 'react-native';
 
-export default function CategoryDetailScreen() {
+export default function WalletDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = id === 'new';
 
@@ -29,30 +29,35 @@ export default function CategoryDetailScreen() {
 
   // Form state
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('📦');
-  const [color, setColor] = useState('#3b82f6');
-  const [type, setType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
+  const [icon, setIcon] = useState('💵');
+  const [color, setColor] = useState('#10B981');
+  const [balance, setBalance] = useState('0.00');
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
-  const fetchCategory = useCallback(async () => {
+  const fetchWallet = useCallback(async () => {
     if (isNew || !id) return;
 
     try {
-      const response = await api.getCategory(id);
-      if (response.category) {
-        const cat = response.category;
-        setName(cat.name);
-        setIcon(cat.icon || '📦');
-        setColor(cat.color || '#3b82f6');
-        setType(cat.type || 'EXPENSE');
+      const response = await api.getWallets();
+      if (response.wallets) {
+        const wallet = response.wallets.find(w => w.id === id);
+        if (wallet) {
+          setName(wallet.name);
+          setIcon(wallet.icon || '💵');
+          setColor(wallet.color || '#10B981');
+          setBalance(wallet.balance.toString());
+        } else {
+          Alert.alert('Error', 'Wallet not found');
+          router.back();
+        }
       }
     } catch (error) {
-      console.error('Error fetching category:', error);
-      Alert.alert('Error', 'Failed to load category');
+      console.error('Error fetching wallet:', error);
+      Alert.alert('Error', 'Failed to load wallet');
     } finally {
       setIsLoading(false);
     }
@@ -60,13 +65,17 @@ export default function CategoryDetailScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchCategory();
-    }, [fetchCategory])
+      fetchWallet();
+    }, [fetchWallet])
   );
 
   const validate = () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Category name is required');
+      Alert.alert('Validation Error', 'Wallet name is required');
+      return false;
+    }
+    if (isNaN(parseFloat(balance))) {
+      Alert.alert('Validation Error', 'Starting balance must be a number');
       return false;
     }
     return true;
@@ -77,24 +86,24 @@ export default function CategoryDetailScreen() {
 
     setIsSaving(true);
     try {
-      const categoryData = {
+      const walletData = {
         name: name.trim(),
         icon,
         color,
-        type,
+        balance: parseFloat(balance),
       };
 
       if (isNew) {
-        await api.createCategory(categoryData);
+        await api.createWallet(walletData);
       } else if (id) {
-        await api.updateCategory(id, categoryData);
+        await api.updateWallet(id, walletData);
       }
 
       router.back();
     } catch (error) {
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : 'Failed to save category'
+        error instanceof Error ? error.message : 'Failed to save wallet'
       );
     } finally {
       setIsSaving(false);
@@ -103,8 +112,8 @@ export default function CategoryDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Category',
-      'Are you sure you want to delete this category? Expenses in this category will not be deleted.',
+      'Delete Wallet',
+      'Are you sure you want to delete this wallet? You can only delete wallets with no transaction history.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -113,11 +122,11 @@ export default function CategoryDetailScreen() {
           onPress: async () => {
             try {
               if (id) {
-                await api.deleteCategory(id);
+                await api.deleteWallet(id);
                 router.back();
               }
-            } catch {
-              Alert.alert('Error', 'Failed to delete category');
+            } catch (error) {
+              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete wallet');
             }
           },
         },
@@ -149,45 +158,11 @@ export default function CategoryDetailScreen() {
             <Text style={styles.previewEmoji}>{icon}</Text>
           </View>
           <Text style={[styles.previewName, { color: textColor }]}>
-            {name || 'Category Name'}
+            {name || 'Account Name'}
           </Text>
-          <View style={[styles.typeBadge, { backgroundColor: type === 'EXPENSE' ? '#ef444420' : '#22c55e20' }]}>
-            <Text style={[styles.typeBadgeText, { color: type === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}>
-              {type}
-            </Text>
-          </View>
-        </View>
-
-        {/* Category Type Switcher */}
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: textColor }]}>Category Type *</Text>
-          <View style={[styles.segmentContainer, { backgroundColor: cardBg }]}>
-            {(['EXPENSE', 'INCOME'] as const).map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[
-                  styles.segmentButton,
-                  type === t && {
-                    backgroundColor: t === 'EXPENSE' ? '#ef4444' : '#22c55e',
-                  },
-                ]}
-                onPress={() => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                  setType(t);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.segmentButtonText,
-                    { color: textColor },
-                    type === t && { color: '#fff', fontWeight: '700' },
-                  ]}
-                >
-                  {t === 'EXPENSE' ? 'Expense' : 'Income'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Text style={[styles.previewBalance, { color: textColor }]}>
+            ৳{parseFloat(balance || '0').toFixed(2)}
+          </Text>
         </View>
 
         {/* Name */}
@@ -197,10 +172,25 @@ export default function CategoryDetailScreen() {
             style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
             value={name}
             onChangeText={setName}
-            placeholder="e.g., Salary, Food, Utilities"
+            placeholder="e.g., DBBL, UCB, Cash, Bkash"
             placeholderTextColor="#9ca3af"
           />
         </View>
+
+        {/* Starting Balance (only when creating new) */}
+        {isNew && (
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: textColor }]}>Starting Balance *</Text>
+            <TextInput
+              style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
+              value={balance}
+              onChangeText={setBalance}
+              keyboardType="numeric"
+              placeholder="0.00"
+              placeholderTextColor="#9ca3af"
+            />
+          </View>
+        )}
 
         {/* Icon */}
         <View style={styles.inputContainer}>
@@ -293,7 +283,7 @@ export default function CategoryDetailScreen() {
 
         {/* Save Button */}
         <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: type === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}
+          style={[styles.saveButton, { backgroundColor: tintColor }]}
           onPress={handleSave}
           disabled={isSaving}
         >
@@ -301,7 +291,7 @@ export default function CategoryDetailScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.saveButtonText}>
-              {isNew ? 'Create Category' : 'Save Changes'}
+              {isNew ? 'Create Wallet' : 'Save Changes'}
             </Text>
           )}
         </TouchableOpacity>
@@ -313,7 +303,7 @@ export default function CategoryDetailScreen() {
             onPress={handleDelete}
           >
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            <Text style={styles.deleteButtonText}>Delete Category</Text>
+            <Text style={styles.deleteButtonText}>Delete Wallet</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -353,15 +343,10 @@ const styles = StyleSheet.create({
   previewName: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  typeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  typeBadgeText: {
-    fontSize: 12,
+  previewBalance: {
+    fontSize: 24,
     fontWeight: '700',
   },
   inputContainer: {
@@ -473,22 +458,6 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     color: '#ef4444',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  // Type Switcher Segment control
-  segmentContainer: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  segmentButtonText: {
-    fontSize: 14,
     fontWeight: '600',
   },
 });
