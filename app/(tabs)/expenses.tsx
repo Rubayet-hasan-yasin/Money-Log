@@ -466,33 +466,35 @@ export default function ExpensesScreen() {
       </View>
 
       {/* Expenses List */}
-      <FlatList
-        data={expenses}
-        renderItem={renderExpense}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          hasMore && !isLoading ? (
-            <ActivityIndicator style={styles.loadingMore} color={tintColor} />
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={64} color="#9ca3af" />
-            <Text style={[styles.emptyTitle, { color: textColor }]}>
-              No transactions yet
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
-              Tap the + button to add your first transaction
-            </Text>
-          </View>
-        }
-      />
+      <View style={styles.listContainer}>
+        <FlatList
+          data={expenses}
+          renderItem={renderExpense}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            hasMore && !isLoading ? (
+              <ActivityIndicator style={styles.loadingMore} color={tintColor} />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="receipt-outline" size={64} color="#9ca3af" />
+              <Text style={[styles.emptyTitle, { color: textColor }]}>
+                No transactions yet
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
+                Tap the + button to add your first transaction
+              </Text>
+            </View>
+          }
+        />
+      </View>
 
       {/* Add Button */}
       {!isSelectionMode && (
@@ -722,6 +724,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     gap: 12,
+    flexShrink: 0,
   },
   actionButton: {
     flexDirection: 'row',
@@ -742,6 +745,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    flexShrink: 0,
   },
   selectionLeft: {
     flexDirection: 'row',
@@ -761,19 +765,29 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   filterPillsContainer: {
+    minHeight: 50,
     maxHeight: 50,
+    flexGrow: 0,
+    flexShrink: 0,
   },
+  listContainer: {
+    flex: 1,
+  },
+
   filterPillsContent: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
     flexDirection: 'row',
+    alignItems: 'center',
   },
   filterPill: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterPillText: {
     fontSize: 14,
@@ -783,6 +797,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 8,
     paddingTop: 8,
+    flexShrink: 0,
   },
   searchBar: {
     flexDirection: 'row',
