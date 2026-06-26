@@ -1,23 +1,31 @@
 {
-    "cli": {
-        "version": ">= 16.24.1",
-        "appVersionSource": "remote"
+  "cli": {
+    "version": ">= 16.24.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://expense-manager-apis.vercel.app/api/v1"
+      },
+      "channel": "preview"
     },
-    "build": {
-        "preview": {
-            "distribution": "internal",
-            "android": {
-                "buildType": "apk"
-            }
-        },
-        "production": {
-            "autoIncrement": true,
-            "android": {
-                "buildType": "app-bundle"
-            }
-        }
-    },
-    "submit": {
-        "production": {}
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://expense-manager-apis.vercel.app/api/v1"
+      },
+      "channel": "production"
     }
+  },
+  "submit": {
+    "production": {}
+  }
 }

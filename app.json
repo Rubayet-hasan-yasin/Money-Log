@@ -25,6 +25,8 @@
       "package": "com.rubayethasanyasin.expensemanager",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
       ],
       "edgeToEdgeEnabled": true,
@@ -62,6 +64,12 @@
         "projectId": "6171e274-6dfc-4dc9-b0d9-f568c3262438"
       }
     },
-    "owner": "rubayethasanyasin"
+    "owner": "rubayethasanyasin",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6171e274-6dfc-4dc9-b0d9-f568c3262438"
+    }
   }
 }

@@ -17,6 +17,9 @@ export default function DashboardHeader({ userName }: DashboardHeaderProps) {
       <Text style={[styles.userName, { color: textColor }]}>
         {userName || 'User'} 👋
       </Text>
+      <Text style={[styles.userName, { color: textColor }]}>
+        Here is the new update for you
+      </Text>
     </View>
   );
 }

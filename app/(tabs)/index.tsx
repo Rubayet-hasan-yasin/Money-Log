@@ -1,14 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { useAuth } from '@/contexts/auth-context';
+// import { useAuth } from '@/contexts/auth-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
 import { CategoryAnalytics, DashboardSummary, Expense, MonthlyTrend, Wallet } from '@/types';
 import { calculateTrend } from '@/utils/formatters';
 
 // Modular Dashboard Components
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
+// import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import BalanceSummary from '@/components/dashboard/BalanceSummary';
 import AccountsSlider from '@/components/dashboard/AccountsSlider';
 import ExpenseTrendCard from '@/components/dashboard/ExpenseTrendCard';
@@ -18,7 +18,7 @@ import MonthlyTrendsChart from '@/components/dashboard/MonthlyTrendsChart';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 
 export default function DashboardScreen() {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
@@ -110,7 +110,7 @@ export default function DashboardScreen() {
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }
     >
-      <DashboardHeader userName={user?.name} />
+      {/* <DashboardHeader userName={user?.name} /> */}
       
       <BalanceSummary summary={summary} walletsCount={wallets.length} />
       
