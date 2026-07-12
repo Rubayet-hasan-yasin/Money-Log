@@ -4,7 +4,7 @@
 
 export const API_CONFIG = {
   // Load from environment variable, fallback to localhost for development
-  BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1',
+  BASE_URL: process.env.EXPO_PUBLIC_API_URL,
   
   // Timeout for API requests (in milliseconds)
   TIMEOUT: 30000,

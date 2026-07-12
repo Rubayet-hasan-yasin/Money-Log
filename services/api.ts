@@ -61,9 +61,14 @@ class ApiService {
         this.axiosInstance.interceptors.response.use(
             (response) => response,
             (error: AxiosError) => {
+                // Log the exact endpoint that failed so we know what went wrong
+                console.error(`API Error on ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status);
+                
                 if (error.response?.data) {
-                    const errorData = error.response.data as { error?: string };
-                    throw new Error(errorData.error || 'An error occurred');
+                    // Some backends send { error: '...' } and some send { message: '...' }
+                    const errorData = error.response.data as any;
+                    const errorMessage = errorData?.error || errorData?.message || typeof errorData === 'string' ? errorData : 'An error occurred';
+                    throw new Error(errorMessage);
                 }
                 throw error;
             }

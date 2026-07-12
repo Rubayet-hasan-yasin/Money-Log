@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
@@ -65,6 +66,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const loginWithToken = useCallback(async (token: string) => {
+    try {
+      await api.setToken(token);
+      const user = await api.getProfile();
+      if (user && user.id) {
+        await api.saveUser(user);
+        setUser(user);
+      } else {
+        throw new Error('Failed to get user profile');
+      }
+    } catch (error) {
+      await api.logout();
+      setUser(null);
+      throw error;
+    }
+  }, []);
+
   const register = useCallback(async (credentials: RegisterCredentials) => {
     const response = await api.register(credentials);
     if (response.token && response.user) {
@@ -100,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated: !!user,
     login,
+    loginWithToken,
     register,
     logout,
     updateProfile,
