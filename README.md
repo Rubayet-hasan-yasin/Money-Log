@@ -142,7 +142,3 @@ This app is designed to work with the [expense-manager-apis](https://github.com/
 - [Expo documentation](https://docs.expo.dev/)
 - [React Navigation](https://reactnavigation.org/)
 - [Expo Router](https://expo.github.io/router/docs/)
-
-## License
-
-MIT
