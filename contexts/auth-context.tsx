@@ -1,5 +1,5 @@
 import { api } from '@/services/api';
-import { LoginCredentials, RegisterCredentials, UpdateProfileData, User } from '@/types';
+import { LoginCredentials, UpdateProfileData, User } from '@/types';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
@@ -8,7 +8,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -83,15 +82,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const register = useCallback(async (credentials: RegisterCredentials) => {
-    const response = await api.register(credentials);
-    if (response.token && response.user) {
-      setUser(response.user);
-    } else {
-      throw new Error('Registration failed');
-    }
-  }, []);
-
   const logout = useCallback(async () => {
     await api.logout();
     setUser(null);
@@ -119,7 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user,
     login,
     loginWithToken,
-    register,
     logout,
     updateProfile,
     refreshProfile,

@@ -15,7 +15,6 @@ import {
     MonthlyTrendsResponse,
     ProfileUpdateResponse,
     RecentExpensesResponse,
-    RegisterCredentials,
     UpdateCategoryData,
     UpdateExpenseData,
     UpdateProfileData,
@@ -93,18 +92,6 @@ export const api = {
     },
 
     // ==================== Auth API ====================
-
-    async register(credentials: RegisterCredentials): Promise<AuthResponse> {
-        const response = await axiosInstance.post<AuthResponse>('/auth/register', credentials);
-        const data = response.data;
-
-        if (data.token) {
-            await this.setToken(data.token);
-            await this.saveUser(data.user);
-        }
-
-        return data;
-    },
 
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
