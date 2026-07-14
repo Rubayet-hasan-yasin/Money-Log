@@ -13,7 +13,6 @@ import {
     Modal,
     RefreshControl,
     ScrollView,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -300,8 +299,8 @@ export default function ExpensesScreen() {
 
   const renderExpense = ({ item }: { item: Expense }) => (
     <TouchableOpacity
+      className="flex-row justify-between items-center p-4 border rounded-xl mb-3"
       style={[
-        styles.expenseCard, 
         { borderColor: selectedExpenses.includes(item.id) ? tintColor : '#e5e7eb' },
         selectedExpenses.includes(item.id) && { backgroundColor: tintColor + '10' }
       ]}
@@ -320,32 +319,36 @@ export default function ExpensesScreen() {
       }}
     >
       {isSelectionMode && (
-        <View style={[styles.checkbox, selectedExpenses.includes(item.id) && { backgroundColor: tintColor, borderColor: tintColor }]}>
+        <View 
+          className="w-[22px] h-[22px] rounded border-2 mr-3 justify-center items-center"
+          style={[
+            { borderColor: '#9ca3af' },
+            selectedExpenses.includes(item.id) && { backgroundColor: tintColor, borderColor: tintColor }
+          ]}
+        >
           {selectedExpenses.includes(item.id) && (
             <Ionicons name="checkmark" size={14} color="#fff" />
           )}
         </View>
       )}
-      <View style={styles.expenseLeft}>
+      <View className="flex-row items-center flex-1">
         <View
-          style={[
-            styles.categoryIcon,
-            { 
+          className="w-11 h-11 rounded-xl justify-center items-center mr-3"
+          style={{ 
               backgroundColor: item.type === 'TRANSFER' 
                 ? '#64748b' 
                 : (item.type === 'INCOME' ? '#22c55e' : (item.category?.color || '#ef4444'))
-            },
-          ]}
+          }}
         >
-          <Text style={styles.categoryEmoji}>
+          <Text className="text-xl">
             {item.type === 'TRANSFER' ? '⇄' : (item.category?.icon || (item.type === 'INCOME' ? '💵' : '📋'))}
           </Text>
         </View>
-        <View style={styles.expenseInfo}>
-          <Text style={[styles.expenseTitle, { color: textColor }]}>
+        <View className="flex-1">
+          <Text className="text-base font-semibold mb-1" style={{ color: textColor }}>
             {item.title}
           </Text>
-          <Text style={[styles.expenseCategory, { color: textColor, opacity: 0.6 }]}>
+          <Text className="text-[13px]" style={{ color: textColor, opacity: 0.6 }}>
             {item.type === 'TRANSFER'
               ? `${item.wallet?.name || 'Source'} ➔ ${item.toWallet?.name || 'Dest'}`
               : `${item.category?.name || 'No Category'} • ${item.wallet?.name || 'Cash'}`
@@ -353,7 +356,8 @@ export default function ExpensesScreen() {
           </Text>
           {item.description && (
             <Text
-              style={[styles.expenseDescription, { color: textColor, opacity: 0.5 }]}
+              className="text-xs mt-0.5"
+              style={{ color: textColor, opacity: 0.5 }}
               numberOfLines={1}
             >
               {item.description}
@@ -361,7 +365,7 @@ export default function ExpensesScreen() {
           )}
         </View>
       </View>
-      <Text style={[styles.expenseAmount, { color: getTransactionColor(item) }]}>
+      <Text className="text-base font-bold" style={{ color: getTransactionColor(item) }}>
         {getTransactionPrefix(item)}{formatCurrencyValue(item.amount, item.currency)}
       </Text>
     </TouchableOpacity>
@@ -369,50 +373,52 @@ export default function ExpensesScreen() {
 
   if (isLoading && expenses.length === 0) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor }}>
         <ActivityIndicator size="large" color={tintColor} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View className="flex-1" style={{ backgroundColor }}>
       {/* Header with actions */}
       {isSelectionMode ? (
-        <View style={[styles.selectionHeader, { backgroundColor: tintColor }]}>
-          <View style={styles.selectionLeft}>
+        <View className="flex-row justify-between items-center px-4 py-3 shrink-0" style={{ backgroundColor: tintColor }}>
+          <View className="flex-row items-center gap-3">
             <TouchableOpacity onPress={() => { setIsSelectionMode(false); setSelectedExpenses([]); }}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.selectionText}>{selectedExpenses.length} selected</Text>
+            <Text className="text-white text-base font-semibold">{selectedExpenses.length} selected</Text>
           </View>
-          <View style={styles.selectionActions}>
-            <TouchableOpacity onPress={toggleSelectAll} style={styles.selectionButton}>
+          <View className="flex-row gap-4">
+            <TouchableOpacity onPress={toggleSelectAll} className="p-1">
               <Ionicons name={selectedExpenses.length === expenses.length ? "checkbox" : "square-outline"} size={22} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleExportCSV} style={styles.selectionButton}>
+            <TouchableOpacity onPress={handleExportCSV} className="p-1">
               <Ionicons name="download-outline" size={22} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleBulkDelete} style={styles.selectionButton}>
+            <TouchableOpacity onPress={handleBulkDelete} className="p-1">
               <Ionicons name="trash-outline" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <View style={styles.headerActions}>
+        <View className="flex-row justify-end px-4 pt-3 gap-3 shrink-0">
           <TouchableOpacity 
-            style={[styles.actionButton, { borderColor: '#e5e7eb' }]}
+            className="flex-row items-center px-3 py-2 rounded-lg border gap-1.5"
+            style={{ borderColor: '#e5e7eb' }}
             onPress={() => setShowFilters(true)}
           >
             <Ionicons name="filter" size={18} color={textColor} />
-            <Text style={[styles.actionButtonText, { color: textColor }]}>Filters</Text>
+            <Text className="text-sm font-medium" style={{ color: textColor }}>Filters</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.actionButton, { borderColor: '#e5e7eb' }]}
+            className="flex-row items-center px-3 py-2 rounded-lg border gap-1.5"
+            style={{ borderColor: '#e5e7eb' }}
             onPress={handleExportCSV}
           >
             <Ionicons name="download-outline" size={18} color={textColor} />
-            <Text style={[styles.actionButtonText, { color: textColor }]}>Export</Text>
+            <Text className="text-sm font-medium" style={{ color: textColor }}>Export</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -421,21 +427,20 @@ export default function ExpensesScreen() {
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false} 
-        style={styles.filterPillsContainer}
-        contentContainerStyle={styles.filterPillsContent}
+        className="min-h-[50px] max-h-[50px] grow-0 shrink-0"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: 'row', alignItems: 'center' }}
       >
         {DATE_FILTERS.map(filter => (
           <TouchableOpacity
             key={filter.value}
+            className="px-4 rounded-full mr-2 h-9 justify-center items-center"
             style={[
-              styles.filterPill,
               selectedDateFilter === filter.value && { backgroundColor: tintColor },
               selectedDateFilter !== filter.value && { borderColor: '#e5e7eb', borderWidth: 1 },
             ]}
             onPress={() => setSelectedDateFilter(filter.value)}
           >
-            <Text style={[
-              styles.filterPillText,
+            <Text className="text-sm font-medium" style={[
               selectedDateFilter === filter.value ? { color: '#fff' } : { color: textColor },
             ]}>
               {filter.label}
@@ -445,11 +450,12 @@ export default function ExpensesScreen() {
       </ScrollView>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { borderColor: '#e5e7eb' }]}>
+      <View className="px-4 pb-2 pt-2 shrink-0">
+        <View className="flex-row items-center border rounded-xl px-3 py-2.5 gap-2" style={{ borderColor: '#e5e7eb' }}>
           <Ionicons name="search" size={20} color="#9ca3af" />
           <TextInput
-            style={[styles.searchInput, { color: textColor }]}
+            className="flex-1 text-base p-0"
+            style={{ color: textColor }}
             placeholder="Search transactions..."
             placeholderTextColor="#9ca3af"
             value={searchQuery}
@@ -466,12 +472,12 @@ export default function ExpensesScreen() {
       </View>
 
       {/* Expenses List */}
-      <View style={styles.listContainer}>
+      <View className="flex-1">
         <FlatList
           data={expenses}
           renderItem={renderExpense}
           keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ padding: 16, paddingTop: 8 }}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
@@ -479,16 +485,16 @@ export default function ExpensesScreen() {
           onEndReachedThreshold={0.5}
           ListFooterComponent={
             hasMore && !isLoading ? (
-              <ActivityIndicator style={styles.loadingMore} color={tintColor} />
+              <ActivityIndicator className="py-5" color={tintColor} />
             ) : null
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
+            <View className="items-center pt-[60px] px-10">
               <Ionicons name="receipt-outline" size={64} color="#9ca3af" />
-              <Text style={[styles.emptyTitle, { color: textColor }]}>
+              <Text className="text-xl font-semibold mt-4" style={{ color: textColor }}>
                 No transactions yet
               </Text>
-              <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
+              <Text className="text-sm text-center mt-2" style={{ color: textColor, opacity: 0.6 }}>
                 Tap the + button to add your first transaction
               </Text>
             </View>
@@ -499,7 +505,8 @@ export default function ExpensesScreen() {
       {/* Add Button */}
       {!isSelectionMode && (
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: tintColor }]}
+          className="absolute bottom-6 right-6 w-14 h-14 rounded-full justify-center items-center shadow-md elevation-5"
+          style={{ backgroundColor: tintColor }}
           onPress={() => router.push('/expense/new')}
         >
           <Ionicons name="add" size={28} color="#fff" />
@@ -513,19 +520,19 @@ export default function ExpensesScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowFilters(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: textColor }]}>Filters & Sorting</Text>
+        <View className="flex-1" style={{ backgroundColor }}>
+          <View className="flex-row justify-between items-center p-4 border-b" style={{ borderColor: '#e5e7eb' }}>
+            <Text className="text-xl font-bold" style={{ color: textColor }}>Filters & Sorting</Text>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
               <Ionicons name="close" size={24} color={textColor} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
+          <ScrollView className="flex-1 p-4">
             {/* Transaction Type Filter */}
-            <View style={styles.filterSection}>
-              <Text style={[styles.filterLabel, { color: textColor }]}>Transaction Type</Text>
-              <View style={styles.sortOptions}>
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Transaction Type</Text>
+              <View className="flex-row flex-wrap gap-2">
                 {[
                   { label: 'All', value: '' },
                   { label: 'Expense', value: 'EXPENSE' },
@@ -534,8 +541,8 @@ export default function ExpensesScreen() {
                 ].map(opt => (
                   <TouchableOpacity
                     key={opt.value}
+                    className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
                     style={[
-                      styles.sortOption,
                       selectedType === opt.value && { backgroundColor: tintColor },
                       selectedType !== opt.value && { borderColor: '#e5e7eb', borderWidth: 1 },
                     ]}
@@ -544,7 +551,7 @@ export default function ExpensesScreen() {
                       setSelectedCategory(''); // Reset category filter since category types vary
                     }}
                   >
-                    <Text style={[styles.sortOptionText, selectedType === opt.value ? { color: '#fff' } : { color: textColor }]}>
+                    <Text className="text-sm font-medium" style={[selectedType === opt.value ? { color: '#fff' } : { color: textColor }]}>
                       {opt.label}
                     </Text>
                   </TouchableOpacity>
@@ -553,33 +560,33 @@ export default function ExpensesScreen() {
             </View>
 
             {/* Wallet Filter */}
-            <View style={styles.filterSection}>
-              <Text style={[styles.filterLabel, { color: textColor }]}>Wallet / Account</Text>
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Wallet / Account</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 <TouchableOpacity
+                  className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
                   style={[
-                    styles.categoryPill,
                     !selectedWallet && { backgroundColor: tintColor },
                     selectedWallet && { borderColor: '#e5e7eb', borderWidth: 1 },
                   ]}
                   onPress={() => setSelectedWallet('')}
                 >
-                  <Text style={[styles.categoryPillText, !selectedWallet ? { color: '#fff' } : { color: textColor }]}>
+                  <Text className="text-sm font-medium" style={[!selectedWallet ? { color: '#fff' } : { color: textColor }]}>
                     All
                   </Text>
                 </TouchableOpacity>
                 {wallets.map(w => (
                   <TouchableOpacity
                     key={w.id}
+                    className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
                     style={[
-                      styles.categoryPill,
                       selectedWallet === w.id && { backgroundColor: tintColor },
                       selectedWallet !== w.id && { borderColor: '#e5e7eb', borderWidth: 1 },
                     ]}
                     onPress={() => setSelectedWallet(w.id)}
                   >
-                    <Text style={styles.categoryPillIcon}>{w.icon || '💵'}</Text>
-                    <Text style={[styles.categoryPillText, selectedWallet === w.id ? { color: '#fff' } : { color: textColor }]}>
+                    <Text className="text-base mr-1.5">{w.icon || '💵'}</Text>
+                    <Text className="text-sm font-medium" style={[selectedWallet === w.id ? { color: '#fff' } : { color: textColor }]}>
                       {w.name}
                     </Text>
                   </TouchableOpacity>
@@ -589,18 +596,18 @@ export default function ExpensesScreen() {
 
             {/* Category Filter */}
             {selectedType !== 'TRANSFER' && (
-              <View style={styles.filterSection}>
-                <Text style={[styles.filterLabel, { color: textColor }]}>Category</Text>
+              <View className="mb-6">
+                <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Category</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                   <TouchableOpacity
+                    className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
                     style={[
-                      styles.categoryPill,
                       !selectedCategory && { backgroundColor: tintColor },
                       selectedCategory && { borderColor: '#e5e7eb', borderWidth: 1 },
                     ]}
                     onPress={() => setSelectedCategory('')}
                   >
-                    <Text style={[styles.categoryPillText, !selectedCategory ? { color: '#fff' } : { color: textColor }]}>
+                    <Text className="text-sm font-medium" style={[!selectedCategory ? { color: '#fff' } : { color: textColor }]}>
                       All
                     </Text>
                   </TouchableOpacity>
@@ -609,15 +616,15 @@ export default function ExpensesScreen() {
                     .map(cat => (
                       <TouchableOpacity
                         key={cat.id}
+                        className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
                         style={[
-                          styles.categoryPill,
                           selectedCategory === cat.id && { backgroundColor: tintColor },
                           selectedCategory !== cat.id && { borderColor: '#e5e7eb', borderWidth: 1 },
                         ]}
                         onPress={() => setSelectedCategory(cat.id)}
                       >
-                        <Text style={styles.categoryPillIcon}>{cat.icon || '📦'}</Text>
-                        <Text style={[styles.categoryPillText, selectedCategory === cat.id ? { color: '#fff' } : { color: textColor }]}>
+                        <Text className="text-base mr-1.5">{cat.icon || '📦'}</Text>
+                        <Text className="text-sm font-medium" style={[selectedCategory === cat.id ? { color: '#fff' } : { color: textColor }]}>
                           {cat.name}
                         </Text>
                       </TouchableOpacity>
@@ -627,20 +634,20 @@ export default function ExpensesScreen() {
             )}
 
             {/* Sort By */}
-            <View style={styles.filterSection}>
-              <Text style={[styles.filterLabel, { color: textColor }]}>Sort By</Text>
-              <View style={styles.sortOptions}>
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Sort By</Text>
+              <View className="flex-row flex-wrap gap-2">
                 {(['date', 'amount', 'category'] as SortOption[]).map(option => (
                   <TouchableOpacity
                     key={option}
+                    className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
                     style={[
-                      styles.sortOption,
                       sortBy === option && { backgroundColor: tintColor },
                       sortBy !== option && { borderColor: '#e5e7eb', borderWidth: 1 },
                     ]}
                     onPress={() => setSortBy(option)}
                   >
-                    <Text style={[styles.sortOptionText, sortBy === option ? { color: '#fff' } : { color: textColor }]}>
+                    <Text className="text-sm font-medium" style={[sortBy === option ? { color: '#fff' } : { color: textColor }]}>
                       {option.charAt(0).toUpperCase() + option.slice(1)}
                     </Text>
                   </TouchableOpacity>
@@ -649,32 +656,32 @@ export default function ExpensesScreen() {
             </View>
 
             {/* Sort Order */}
-            <View style={styles.filterSection}>
-              <Text style={[styles.filterLabel, { color: textColor }]}>Order</Text>
-              <View style={styles.sortOptions}>
+            <View className="mb-6">
+              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Order</Text>
+              <View className="flex-row flex-wrap gap-2">
                 <TouchableOpacity
+                  className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
                   style={[
-                    styles.sortOption,
                     sortOrder === 'desc' && { backgroundColor: tintColor },
                     sortOrder !== 'desc' && { borderColor: '#e5e7eb', borderWidth: 1 },
                   ]}
                   onPress={() => setSortOrder('desc')}
                 >
                   <Ionicons name="arrow-down" size={16} color={sortOrder === 'desc' ? '#fff' : textColor} />
-                  <Text style={[styles.sortOptionText, sortOrder === 'desc' ? { color: '#fff' } : { color: textColor }]}>
+                  <Text className="text-sm font-medium" style={[sortOrder === 'desc' ? { color: '#fff' } : { color: textColor }]}>
                     Descending
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
                   style={[
-                    styles.sortOption,
                     sortOrder === 'asc' && { backgroundColor: tintColor },
                     sortOrder !== 'asc' && { borderColor: '#e5e7eb', borderWidth: 1 },
                   ]}
                   onPress={() => setSortOrder('asc')}
                 >
                   <Ionicons name="arrow-up" size={16} color={sortOrder === 'asc' ? '#fff' : textColor} />
-                  <Text style={[styles.sortOptionText, sortOrder === 'asc' ? { color: '#fff' } : { color: textColor }]}>
+                  <Text className="text-sm font-medium" style={[sortOrder === 'asc' ? { color: '#fff' } : { color: textColor }]}>
                     Ascending
                   </Text>
                 </TouchableOpacity>
@@ -682,9 +689,10 @@ export default function ExpensesScreen() {
             </View>
           </ScrollView>
 
-          <View style={styles.modalFooter}>
+          <View className="flex-row p-4 border-t gap-3" style={{ borderColor: '#e5e7eb' }}>
             <TouchableOpacity
-              style={[styles.resetButton, { borderColor: '#e5e7eb' }]}
+              className="flex-1 p-4 rounded-xl border items-center"
+              style={{ borderColor: '#e5e7eb' }}
               onPress={() => {
                 setSelectedCategory('');
                 setSelectedType('');
@@ -694,13 +702,14 @@ export default function ExpensesScreen() {
                 setSelectedDateFilter('all');
               }}
             >
-              <Text style={[styles.resetButtonText, { color: textColor }]}>Reset</Text>
+              <Text className="text-base font-semibold" style={{ color: textColor }}>Reset</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.applyButton, { backgroundColor: tintColor }]}
+              className="flex-[2] p-4 rounded-xl items-center"
+              style={{ backgroundColor: tintColor }}
               onPress={() => setShowFilters(false)}
             >
-              <Text style={styles.applyButtonText}>Apply Filters</Text>
+              <Text className="text-white text-base font-semibold">Apply Filters</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -708,288 +717,3 @@ export default function ExpensesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 12,
-    flexShrink: 0,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 6,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  selectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexShrink: 0,
-  },
-  selectionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  selectionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  selectionActions: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  selectionButton: {
-    padding: 4,
-  },
-  filterPillsContainer: {
-    minHeight: 50,
-    maxHeight: 50,
-    flexGrow: 0,
-    flexShrink: 0,
-  },
-  listContainer: {
-    flex: 1,
-  },
-
-  filterPillsContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  filterPill: {
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 8,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterPillText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  searchContainer: {
-    padding: 16,
-    paddingBottom: 8,
-    paddingTop: 8,
-    flexShrink: 0,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  listContent: {
-    padding: 16,
-    paddingTop: 8,
-  },
-  expenseCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#9ca3af',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  expenseLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  categoryIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  categoryEmoji: {
-    fontSize: 20,
-  },
-  expenseInfo: {
-    flex: 1,
-  },
-  expenseTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  expenseCategory: {
-    fontSize: 13,
-  },
-  expenseDescription: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  expenseAmount: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  loadingMore: {
-    paddingVertical: 20,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalContainer: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  filterSection: {
-    marginBottom: 24,
-  },
-  filterLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  categoryPillIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  categoryPillText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  sortOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  sortOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    gap: 6,
-  },
-  sortOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    gap: 12,
-  },
-  resetButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  resetButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  applyButton: {
-    flex: 2,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  applyButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
