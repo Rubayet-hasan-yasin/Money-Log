@@ -1,4 +1,4 @@
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/auth-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { router } from 'expo-router';
@@ -7,22 +7,18 @@ import React, { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
-// Ensure the auth session properly completes and closes the browser
-WebBrowser.maybeCompleteAuthSession();
-
 import {
     ActivityIndicator,
     Alert,
-    Dimensions,
     Image,
     Platform,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+// Ensure the auth session properly completes and closes the browser
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const { loginWithToken } = useAuth();
@@ -64,23 +60,25 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <View style={styles.content}>
-        <View style={styles.headerContainer}>
+    <View className="flex-1" style={{ backgroundColor }}>
+      <View className={`flex-1 px-6 justify-between pt-[15vh] ${Platform.OS === 'ios' ? 'pb-10' : 'pb-6'}`}>
+        <View className="items-center mt-5">
           <Image 
             source={require('../assets/icons/adaptive-icon.png')} 
-            style={{ width: 100, height: 100, marginBottom: 16 }} 
+            className="w-[100px] h-[100px] mb-4"
             resizeMode="contain"
           />
-          <Text style={[styles.title, { color: textColor }]}>Money Log</Text>
-          <Text style={[styles.subtitle, { color: textColor }]}>
+          <Text className="text-3xl font-extrabold mb-3 text-center" style={{ color: textColor }}>
+            Money Log
+          </Text>
+          <Text className="text-base text-center opacity-60 leading-6 px-5" style={{ color: textColor }}>
             Take control of your finances, effortlessly.
           </Text>
         </View>
 
-        <View style={styles.authContainer}>
+        <View className="w-full py-8">
           <TouchableOpacity
-            style={styles.googleButton}
+            className="bg-white rounded-full py-4 px-6 w-full shadow-md elevation-4"
             onPress={handleGoogleLogin}
             disabled={isLoading}
             activeOpacity={0.8}
@@ -88,16 +86,18 @@ export default function LoginScreen() {
             {isLoading ? (
               <ActivityIndicator color="#000" />
             ) : (
-              <View style={styles.googleButtonContent}>
+              <View className="flex-row items-center justify-center gap-3">
                 <AntDesign name="google" size={24} color="#971515ff" />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                <Text className="text-black text-lg font-semibold">
+                  Continue with Google
+                </Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
         
-        <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>
+        <View className="items-center">
+          <Text className="text-[13px] text-gray-400 text-center leading-5 px-5">
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </Text>
         </View>
@@ -105,93 +105,3 @@ export default function LoginScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-    paddingTop: height * 0.15,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  logoPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: '#6366f1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  logoText: {
-    color: '#ffffff',
-    fontSize: 32,
-    fontWeight: '800',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.6,
-    lineHeight: 24,
-    paddingHorizontal: 20,
-  },
-  authContainer: {
-    width: '100%',
-    paddingVertical: 32,
-  },
-  googleButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 100,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  googleButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-  },
-  googleButtonText: {
-    color: '#000000',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  footerContainer: {
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 13,
-    color: '#9ca3af',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 20,
-  },
-});
