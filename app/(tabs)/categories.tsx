@@ -10,7 +10,6 @@ import {
     FlatList,
     LayoutAnimation,
     RefreshControl,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
@@ -76,30 +75,29 @@ export default function CategoriesScreen() {
 
   const renderCategory = ({ item }: { item: Category }) => (
     <TouchableOpacity
-      style={[styles.categoryCard, { borderColor: '#e5e7eb' }]}
+      className="flex-row justify-between items-center p-4 border rounded-xl mb-3"
+      style={{ borderColor: '#e5e7eb' }}
       onPress={() => router.push(`/category/${item.id}` as any)}
       onLongPress={() => handleDelete(item)}
     >
-      <View style={styles.categoryLeft}>
+      <View className="flex-row items-center flex-1">
         <View
-          style={[
-            styles.categoryIcon,
-            { backgroundColor: item.color || '#6b7280' },
-          ]}
+          className="w-12 h-12 rounded-xl justify-center items-center mr-3"
+          style={{ backgroundColor: item.color || '#6b7280' }}
         >
-          <Text style={styles.categoryEmoji}>{item.icon || '📦'}</Text>
+          <Text className="text-[22px]">{item.icon || '📦'}</Text>
         </View>
-        <View style={styles.categoryInfo}>
-          <Text style={[styles.categoryName, { color: textColor }]}>
+        <View className="flex-1">
+          <Text className="text-base font-semibold mb-1" style={{ color: textColor }}>
             {item.name}
           </Text>
-          <View style={styles.categoryMeta}>
+          <View className="flex-row items-center">
             {item._count?.expenses !== undefined && (
-              <Text style={[styles.categoryExpenseCount, { color: activeTab === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}>
+              <Text className="text-[13px] font-medium" style={{ color: activeTab === 'EXPENSE' ? '#ef4444' : '#22c55e' }}>
                 {item._count.expenses} transaction{item._count.expenses !== 1 ? 's' : ''}
               </Text>
             )}
-            <Text style={[styles.categoryDate, { color: textColor, opacity: 0.5 }]}>
+            <Text className="text-[13px]" style={{ color: textColor, opacity: 0.5 }}>
               {item._count?.expenses !== undefined ? ' • ' : ''}Created {new Date(item.createdAt).toLocaleDateString()}
             </Text>
           </View>
@@ -113,36 +111,28 @@ export default function CategoriesScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor }}>
         <ActivityIndicator size="large" color={tintColor} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View className="flex-1" style={{ backgroundColor }}>
       {/* Category Type Tabs */}
-      <View style={[styles.segmentContainer, { backgroundColor: cardBg }]}>
+      <View className="flex-row rounded-xl p-1 m-4 mb-2" style={{ backgroundColor: cardBg }}>
         {(['EXPENSE', 'INCOME'] as const).map((t) => (
           <TouchableOpacity
             key={t}
-            style={[
-              styles.segmentButton,
-              activeTab === t && {
-                backgroundColor: t === 'EXPENSE' ? '#ef4444' : '#22c55e',
-              },
-            ]}
+            className={`flex-1 py-3 items-center rounded-lg ${activeTab === t ? (t === 'EXPENSE' ? 'bg-red-500' : 'bg-green-500') : ''}`}
             onPress={() => {
               LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
               setActiveTab(t);
             }}
           >
             <Text
-              style={[
-                styles.segmentButtonText,
-                { color: textColor },
-                activeTab === t && { color: '#fff', fontWeight: '700' },
-              ]}
+              className={`text-sm font-semibold ${activeTab === t ? 'text-white' : ''}`}
+              style={activeTab !== t ? { color: textColor } : {}}
             >
               {t === 'EXPENSE' ? 'Expense Categories' : 'Income Categories'}
             </Text>
@@ -154,17 +144,17 @@ export default function CategoriesScreen() {
         data={filteredCategories}
         renderItem={renderCategory}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ padding: 16, paddingTop: 8 }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+          <View className="items-center pt-[60px] px-10">
             <Ionicons name="folder-open-outline" size={64} color="#9ca3af" />
-            <Text style={[styles.emptyTitle, { color: textColor }]}>
+            <Text className="text-xl font-semibold mt-4" style={{ color: textColor }}>
               No {activeTab.toLowerCase()} categories yet
             </Text>
-            <Text style={[styles.emptySubtitle, { color: textColor, opacity: 0.6 }]}>
+            <Text className="text-sm text-center mt-2" style={{ color: textColor, opacity: 0.6 }}>
               Create categories to organize your transactions
             </Text>
           </View>
@@ -173,7 +163,8 @@ export default function CategoriesScreen() {
 
       {/* Add Button */}
       <TouchableOpacity
-        style={[styles.addButton, { backgroundColor: activeTab === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full justify-center items-center shadow-md elevation-5"
+        style={{ backgroundColor: activeTab === 'EXPENSE' ? '#ef4444' : '#22c55e' }}
         onPress={() => router.push({ pathname: '/category/new', params: { type: activeTab } } as any)}
       >
         <Ionicons name="add" size={28} color="#fff" />
@@ -181,109 +172,3 @@ export default function CategoriesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  segmentContainer: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-    margin: 16,
-    marginBottom: 8,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  segmentButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listContent: {
-    padding: 16,
-    paddingTop: 8,
-  },
-  categoryCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  categoryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  categoryEmoji: {
-    fontSize: 22,
-  },
-  categoryInfo: {
-    flex: 1,
-  },
-  categoryName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  categoryMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  categoryExpenseCount: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  categoryDate: {
-    fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-});
