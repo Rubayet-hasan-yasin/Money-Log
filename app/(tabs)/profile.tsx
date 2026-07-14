@@ -7,7 +7,6 @@ import {
     ActivityIndicator,
     Alert,
     ScrollView,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -107,28 +106,29 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor }]}
-      contentContainerStyle={styles.content}
+      className="flex-1"
+      style={{ backgroundColor }}
+      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
     >
       {/* Profile Header */}
-      <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: tintColor }]}>
-          <Text style={styles.avatarText}>
+      <View className="items-center mb-8">
+        <View className="w-20 h-20 rounded-full justify-center items-center mb-4" style={{ backgroundColor: tintColor }}>
+          <Text className="text-3xl font-bold text-white">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </Text>
         </View>
-        <Text style={[styles.userName, { color: textColor }]}>
+        <Text className="text-2xl font-bold mb-1" style={{ color: textColor }}>
           {user?.name || 'User'}
         </Text>
-        <Text style={[styles.userEmail, { color: textColor, opacity: 0.6 }]}>
+        <Text className="text-sm" style={{ color: textColor, opacity: 0.6 }}>
           {user?.email}
         </Text>
       </View>
 
       {/* Profile Form */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>
+      <View className="mb-6">
+        <View className="flex-row justify-between items-center mb-3">
+          <Text className="text-lg font-semibold" style={{ color: textColor }}>
             Account Information
           </Text>
           {!isEditing && (
@@ -138,27 +138,29 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={[styles.card, { borderColor: '#e5e7eb' }]}>
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: textColor }]}>Name</Text>
+        <View className="border rounded-xl p-4" style={{ borderColor: '#e5e7eb' }}>
+          <View className="mb-4">
+            <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>Name</Text>
             {isEditing ? (
               <TextInput
-                style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
+                className="border rounded-lg p-3 text-base"
+                style={{ color: textColor, borderColor: '#e5e7eb' }}
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter your name"
                 placeholderTextColor="#9ca3af"
               />
             ) : (
-              <Text style={[styles.value, { color: textColor }]}>{user?.name}</Text>
+              <Text className="text-base" style={{ color: textColor }}>{user?.name}</Text>
             )}
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: textColor }]}>Email</Text>
+          <View className="mb-4">
+            <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>Email</Text>
             {isEditing ? (
               <TextInput
-                style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
+                className="border rounded-lg p-3 text-base"
+                style={{ color: textColor, borderColor: '#e5e7eb' }}
                 value={email}
                 onChangeText={setEmail}
                 placeholder="Enter your email"
@@ -167,18 +169,19 @@ export default function ProfileScreen() {
                 autoCapitalize="none"
               />
             ) : (
-              <Text style={[styles.value, { color: textColor }]}>{user?.email}</Text>
+              <Text className="text-base" style={{ color: textColor }}>{user?.email}</Text>
             )}
           </View>
 
           {isEditing && (
             <>
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: textColor }]}>
+              <View className="mb-4">
+                <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>
                   New Password (optional)
                 </Text>
                 <TextInput
-                  style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
+                  className="border rounded-lg p-3 text-base"
+                  style={{ color: textColor, borderColor: '#e5e7eb' }}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Enter new password"
@@ -187,12 +190,13 @@ export default function ProfileScreen() {
                 />
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { color: textColor }]}>
+              <View className="mb-4">
+                <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>
                   Confirm Password
                 </Text>
                 <TextInput
-                  style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
+                  className="border rounded-lg p-3 text-base"
+                  style={{ color: textColor, borderColor: '#e5e7eb' }}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="Confirm new password"
@@ -203,31 +207,32 @@ export default function ProfileScreen() {
             </>
           )}
 
-          <View style={styles.inputContainer}>
-            <Text style={[styles.label, { color: textColor }]}>Member Since</Text>
-            <Text style={[styles.value, { color: textColor }]}>
+          <View className="mb-4">
+            <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>Member Since</Text>
+            <Text className="text-base" style={{ color: textColor }}>
               {formatDate(user?.createdAt)}
             </Text>
           </View>
         </View>
 
         {isEditing && (
-          <View style={styles.buttonRow}>
+          <View className="flex-row gap-3 mt-4">
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+              className="flex-1 p-3.5 rounded-lg items-center bg-gray-100"
               onPress={handleCancel}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text className="text-gray-700 text-sm font-semibold">Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: tintColor }]}
+              className="flex-1 p-3.5 rounded-lg items-center"
+              style={{ backgroundColor: tintColor }}
               onPress={handleSave}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <Text className="text-white text-sm font-semibold">Save Changes</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -236,135 +241,20 @@ export default function ProfileScreen() {
 
       {/* Logout Button */}
       <TouchableOpacity
-        style={[styles.logoutButton, { borderColor: '#ef4444' }]}
+        className="flex-row items-center justify-center p-4 border rounded-xl gap-2 mb-6"
+        style={{ borderColor: '#ef4444' }}
         onPress={handleLogout}
       >
         <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-        <Text style={styles.logoutText}>Log Out</Text>
+        <Text className="text-red-500 text-base font-semibold">Log Out</Text>
       </TouchableOpacity>
 
       {/* App Info */}
-      <View style={styles.appInfo}>
-        <Text style={[styles.appVersion, { color: textColor, opacity: 0.4 }]}>
+      <View className="items-center">
+        <Text className="text-xs" style={{ color: textColor, opacity: 0.4 }}>
           Expense Manager v1.0.0
         </Text>
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 14,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 8,
-    opacity: 0.7,
-  },
-  value: {
-    fontSize: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  button: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#f3f4f6',
-  },
-  cancelButtonText: {
-    color: '#374151',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 1,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 24,
-  },
-  logoutText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  appInfo: {
-    alignItems: 'center',
-  },
-  appVersion: {
-    fontSize: 12,
-  },
-});
