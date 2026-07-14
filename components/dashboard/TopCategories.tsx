@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { CategoryAnalytics } from '@/types';
 
@@ -35,49 +35,47 @@ export default function TopCategories({ top5Categories, totalCategoryAmount }: T
   const maxAmount = top5Categories[0]?.totalAmount || 1;
 
   return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: textColor }]}>
+    <View className="mb-6">
+      <Text className="text-lg font-semibold mb-3" style={{ color: textColor }}>
         Top 5 Spending Categories
       </Text>
-      <View style={[styles.card, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
+      <View className="border rounded-xl p-4" style={{ borderColor: '#e5e7eb', backgroundColor: cardBg }}>
         {top5Categories.map((category, index) => {
           const percentage = totalCategoryAmount > 0 ? (category.totalAmount / totalCategoryAmount) * 100 : 0;
           const barWidth = (category.totalAmount / maxAmount) * 100;
           return (
-            <View key={category.categoryId || index} style={styles.topCategoryRow}>
-              <View style={styles.topCategoryHeader}>
-                <View style={styles.topCategoryInfo}>
-                  <View style={[styles.topCategoryRank, { backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }]}>
-                    <Text style={styles.topCategoryRankText}>{index + 1}</Text>
+            <View key={category.categoryId || index} className="py-3 border-b" style={{ borderBottomColor: index === top5Categories.length - 1 ? 'transparent' : '#e5e7eb' }}>
+              <View className="flex-row justify-between items-center mb-2">
+                <View className="flex-row items-center flex-1">
+                  <View className="w-6 h-6 rounded-full justify-center items-center mr-2.5" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}>
+                    <Text className="text-white text-xs font-bold">{index + 1}</Text>
                   </View>
-                  <Text style={[styles.categoryIcon, { marginRight: 8 }]}>
+                  <Text className="text-base mr-2">
                     {category.icon || '📦'}
                   </Text>
-                  <Text style={[styles.topCategoryName, { color: textColor }]}>
+                  <Text className="text-sm font-medium flex-1" style={{ color: textColor }}>
                     {category.categoryName}
                   </Text>
                 </View>
-                <View style={styles.topCategoryAmountContainer}>
-                  <Text style={[styles.topCategoryAmount, { color: textColor }]}>
+                <View className="items-end">
+                  <Text className="text-sm font-semibold" style={{ color: textColor }}>
                     {formatCurrency(category.totalAmount)}
                   </Text>
-                  <Text style={[styles.topCategoryPercent, { color: CHART_COLORS[index % CHART_COLORS.length] }]}>
+                  <Text className="text-xs font-medium" style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>
                     {percentage.toFixed(1)}%
                   </Text>
                 </View>
               </View>
-              <View style={styles.topCategoryBarBg}>
+              <View className="h-2 rounded bg-gray-200 mb-1.5 overflow-hidden">
                 <View 
-                  style={[
-                    styles.topCategoryBar, 
-                    { 
-                      width: `${barWidth}%`, 
-                      backgroundColor: CHART_COLORS[index % CHART_COLORS.length] 
-                    }
-                  ]} 
+                  className="h-full rounded"
+                  style={{ 
+                    width: `${barWidth}%`, 
+                    backgroundColor: CHART_COLORS[index % CHART_COLORS.length] 
+                  }} 
                 />
               </View>
-              <Text style={[styles.topCategoryCount, { color: '#6b7280' }]}>
+              <Text className="text-xs" style={{ color: '#6b7280' }}>
                 {category.count} transaction{category.count !== 1 ? 's' : ''} • Avg: {formatCurrency(category.averageAmount)}
               </Text>
             </View>
@@ -87,81 +85,3 @@ export default function TopCategories({ top5Categories, totalCategoryAmount }: T
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-  },
-  topCategoryRow: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  topCategoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  topCategoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  topCategoryRank: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  topCategoryRankText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  categoryIcon: {
-    fontSize: 16,
-  },
-  topCategoryName: {
-    fontSize: 14,
-    fontWeight: '500',
-    flex: 1,
-  },
-  topCategoryAmountContainer: {
-    alignItems: 'flex-end',
-  },
-  topCategoryAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  topCategoryPercent: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  topCategoryBarBg: {
-    height: 8,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    marginBottom: 6,
-    overflow: 'hidden',
-  },
-  topCategoryBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  topCategoryCount: {
-    fontSize: 12,
-  },
-});

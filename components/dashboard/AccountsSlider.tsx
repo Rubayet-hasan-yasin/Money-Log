@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -22,13 +22,13 @@ export default function AccountsSlider({ wallets }: AccountsSliderProps) {
   };
 
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: textColor, marginBottom: 0 }]}>
+    <View className="mb-6">
+      <View className="flex-row justify-between items-center mb-3">
+        <Text className="text-lg font-semibold" style={{ color: textColor }}>
           My Accounts / Wallets
         </Text>
         <TouchableOpacity 
-          style={styles.addWalletButton} 
+          className="p-1"
           onPress={() => router.push('/wallet/new' as any)}
         >
           <Ionicons name="add-circle" size={24} color={tintColor} />
@@ -37,23 +37,24 @@ export default function AccountsSlider({ wallets }: AccountsSliderProps) {
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false} 
-        contentContainerStyle={styles.walletsContainer}
+        contentContainerStyle={{ paddingVertical: 4, gap: 12 }}
       >
         {wallets.map(w => (
           <TouchableOpacity 
             key={w.id} 
-            style={[styles.walletCard, { backgroundColor: cardBg }]}
+            className="w-40 p-4 rounded-2xl mr-1"
+            style={{ backgroundColor: cardBg }}
             onPress={() => router.push(`/wallet/${w.id}` as any)}
           >
-            <View style={styles.walletHeader}>
-              <View style={[styles.walletIconBadge, { backgroundColor: (w.color || tintColor) + '20' }]}>
-                <Text style={styles.walletIcon}>{w.icon || '💵'}</Text>
+            <View className="flex-row items-center gap-2 mb-3">
+              <View className="w-8 h-8 rounded-[10px] justify-center items-center" style={{ backgroundColor: (w.color || tintColor) + '20' }}>
+                <Text className="text-base">{w.icon || '💵'}</Text>
               </View>
-              <Text style={[styles.walletName, { color: textColor }]} numberOfLines={1}>
+              <Text className="text-sm font-semibold flex-1" style={{ color: textColor }} numberOfLines={1}>
                 {w.name}
               </Text>
             </View>
-            <Text style={[styles.walletBalance, { color: textColor }]}>
+            <Text className="text-lg font-bold" style={{ color: textColor }}>
               {formatCurrency(w.balance)}
             </Text>
           </TouchableOpacity>
@@ -62,58 +63,3 @@ export default function AccountsSlider({ wallets }: AccountsSliderProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  addWalletButton: {
-    padding: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  walletsContainer: {
-    paddingVertical: 4,
-    gap: 12,
-  },
-  walletCard: {
-    width: 160,
-    padding: 16,
-    borderRadius: 16,
-    marginRight: 4,
-  },
-  walletHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  walletIconBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  walletIcon: {
-    fontSize: 16,
-  },
-  walletName: {
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1,
-  },
-  walletBalance: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-});

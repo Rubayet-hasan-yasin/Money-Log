@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 // import { useAuth } from '@/contexts/auth-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -92,7 +92,7 @@ export default function DashboardScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor }}>
         <ActivityIndicator size="large" color={tintColor} />
       </View>
     );
@@ -104,8 +104,9 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor }]}
-      contentContainerStyle={styles.content}
+      className="flex-1"
+      style={{ backgroundColor }}
+      contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }
@@ -128,18 +129,3 @@ export default function DashboardScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

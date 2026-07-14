@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Expense } from '@/types';
 
@@ -24,45 +24,39 @@ export default function RecentTransactions({ recentExpenses }: RecentTransaction
   };
 
   return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: textColor }]}>
+    <View className="mb-6">
+      <Text className="text-lg font-semibold mb-3" style={{ color: textColor }}>
         Recent Transactions
       </Text>
-      <View style={[styles.card, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
+      <View className="border rounded-xl p-4" style={{ borderColor: '#e5e7eb', backgroundColor: cardBg }}>
         {recentExpenses.length > 0 ? (
           recentExpenses.map((expense, index) => (
             <View
               key={expense.id}
-              style={[
-                styles.expenseRow,
-                index < recentExpenses.length - 1 && styles.expenseRowBorder,
-              ]}
+              className={`flex-row justify-between items-center py-3 ${index < recentExpenses.length - 1 ? 'border-b border-gray-200' : ''}`}
             >
-              <View style={styles.expenseInfo}>
-                <Text style={[styles.expenseTitle, { color: textColor }]}>
+              <View className="flex-1 mr-4">
+                <Text className="text-sm font-medium mb-1" style={{ color: textColor }}>
                   {expense.title}
                 </Text>
-                <Text style={[styles.expenseCategory, { color: textColor, opacity: 0.6 }]}>
+                <Text className="text-xs" style={{ color: textColor, opacity: 0.6 }}>
                   {expense.type === 'TRANSFER'
                     ? `${expense.wallet?.name || 'Source'} ➔ ${expense.toWallet?.name || 'Dest'}`
                     : `${expense.category?.icon || '📦'} ${expense.category?.name || 'Uncategorized'} • ${expense.wallet?.name || 'Cash'}`
                   } • {formatDate(expense.date)}
                 </Text>
               </View>
-              <Text style={[
-                styles.expenseAmount, 
-                { 
+              <Text className="text-sm font-semibold" style={{ 
                   color: expense.type === 'INCOME' 
                     ? '#22c55e' 
                     : (expense.type === 'TRANSFER' ? '#64748b' : textColor) 
-                }
-              ]}>
+                }}>
                 {expense.type === 'INCOME' ? '+' : (expense.type === 'TRANSFER' ? '' : '-')}{formatCurrency(expense.amount)}
               </Text>
             </View>
           ))
         ) : (
-          <Text style={[styles.emptyText, { color: textColor, opacity: 0.6 }]}>
+          <Text className="text-center py-5" style={{ color: textColor, opacity: 0.6 }}>
             No recent transactions. Start tracking!
           </Text>
         )}
@@ -70,49 +64,3 @@ export default function RecentTransactions({ recentExpenses }: RecentTransaction
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-  },
-  expenseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  expenseRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  expenseInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  expenseTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  expenseCategory: {
-    fontSize: 12,
-  },
-  expenseAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyText: {
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-});

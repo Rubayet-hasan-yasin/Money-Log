@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { MonthlyTrend } from '@/types';
@@ -28,39 +28,39 @@ export default function ExpenseTrendCard({ expenseTrend, monthlyTrends }: Expens
   const currentExpenses = monthlyTrends[monthlyTrends.length - 1]?.totalExpenses || 0;
 
   return (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: textColor }]}>
+    <View className="mb-6">
+      <Text className="text-lg font-semibold mb-3" style={{ color: textColor }}>
         Expense Trend
       </Text>
-      <View style={[styles.trendCard, { backgroundColor: expenseTrend.isIncrease ? '#fee2e2' : '#dcfce7' }]}>
-        <View style={styles.trendCardContent}>
-          <View style={[styles.trendIconContainer, { backgroundColor: expenseTrend.isIncrease ? '#ef4444' : '#22c55e' }]}>
+      <View className="rounded-2xl p-4" style={{ backgroundColor: expenseTrend.isIncrease ? '#fee2e2' : '#dcfce7' }}>
+        <View className="flex-row items-center mb-4">
+          <View className="w-12 h-12 rounded-full justify-center items-center mr-3" style={{ backgroundColor: expenseTrend.isIncrease ? '#ef4444' : '#22c55e' }}>
             <Ionicons 
               name={expenseTrend.isIncrease ? "trending-up" : "trending-down"} 
               size={24} 
               color="#fff" 
             />
           </View>
-          <View style={styles.trendCardInfo}>
-            <Text style={[styles.trendCardTitle, { color: expenseTrend.isIncrease ? '#991b1b' : '#166534' }]}>
+          <View className="flex-1">
+            <Text className="text-base font-semibold mb-0.5" style={{ color: expenseTrend.isIncrease ? '#991b1b' : '#166534' }}>
               {expenseTrend.isIncrease ? 'Spending Increased' : 'Spending Decreased'}
             </Text>
-            <Text style={[styles.trendCardSubtitle, { color: expenseTrend.isIncrease ? '#b91c1c' : '#15803d' }]}>
+            <Text className="text-sm" style={{ color: expenseTrend.isIncrease ? '#b91c1c' : '#15803d' }}>
               {expenseTrend.percentage.toFixed(1)}% compared to last month
             </Text>
           </View>
         </View>
-        <View style={styles.trendComparison}>
-          <View style={styles.trendCompareItem}>
-            <Text style={[styles.trendCompareLabel, { color: '#6b7280' }]}>Last Month</Text>
-            <Text style={[styles.trendCompareValue, { color: textColor }]}>
+        <View className="flex-row justify-around items-center pt-4 border-t border-black/10">
+          <View className="items-center">
+            <Text className="text-xs mb-1" style={{ color: '#6b7280' }}>Last Month</Text>
+            <Text className="text-lg font-semibold" style={{ color: textColor }}>
               {formatCurrency(previousExpenses)}
             </Text>
           </View>
           <Ionicons name="arrow-forward" size={20} color="#9ca3af" />
-          <View style={styles.trendCompareItem}>
-            <Text style={[styles.trendCompareLabel, { color: '#6b7280' }]}>This Month</Text>
-            <Text style={[styles.trendCompareValue, { color: textColor }]}>
+          <View className="items-center">
+            <Text className="text-xs mb-1" style={{ color: '#6b7280' }}>This Month</Text>
+            <Text className="text-lg font-semibold" style={{ color: textColor }}>
               {formatCurrency(currentExpenses)}
             </Text>
           </View>
@@ -69,61 +69,3 @@ export default function ExpenseTrendCard({ expenseTrend, monthlyTrends }: Expens
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  trendCard: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  trendCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  trendIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  trendCardInfo: {
-    flex: 1,
-  },
-  trendCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  trendCardSubtitle: {
-    fontSize: 14,
-  },
-  trendComparison: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  trendCompareItem: {
-    alignItems: 'center',
-  },
-  trendCompareLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  trendCompareValue: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-});
