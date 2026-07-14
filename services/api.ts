@@ -29,64 +29,29 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
 
-class ApiService {
-    private token: string | null = null;
-    private axiosInstance: AxiosInstance;
+let currentToken: string | null = null;
 
-    constructor() {
-        // Create axios instance with base configuration
-        this.axiosInstance = axios.create({
-            baseURL: API_CONFIG.BASE_URL,
-            timeout: API_CONFIG.TIMEOUT,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+const axiosInstance = axios.create({
+    baseURL: API_CONFIG.BASE_URL,
+    timeout: API_CONFIG.TIMEOUT,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
 
-        // Add request interceptor to include auth token
-        this.axiosInstance.interceptors.request.use(
-            async (config) => {
-                const token = await this.getToken();
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
-                return config;
-            },
-            (error) => {
-                return Promise.reject(error);
-            }
-        );
+export const api = {
+    axiosInstance,
 
-        // Add response interceptor for error handling
-        this.axiosInstance.interceptors.response.use(
-            (response) => response,
-            (error: AxiosError) => {
-                // Log the exact endpoint that failed so we know what went wrong
-                console.error(`API Error on ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status);
-                
-                if (error.response?.data) {
-                    // Some backends send { error: '...' } and some send { message: '...' }
-                    const errorData = error.response.data as any;
-                    const errorMessage = errorData?.error || errorData?.message || typeof errorData === 'string' ? errorData : 'An error occurred';
-                    throw new Error(errorMessage);
-                }
-                throw error;
-            }
-        );
-
-        this.loadToken();
-    }
-
-    private async loadToken() {
+    async loadToken() {
         try {
-            this.token = await AsyncStorage.getItem(TOKEN_KEY);
+            currentToken = await AsyncStorage.getItem(TOKEN_KEY);
         } catch (error) {
             console.error('Error loading token:', error);
         }
-    }
+    },
 
     async setToken(token: string | null) {
-        this.token = token;
+        currentToken = token;
         try {
             if (token) {
                 await AsyncStorage.setItem(TOKEN_KEY, token);
@@ -96,14 +61,14 @@ class ApiService {
         } catch (error) {
             console.error('Error saving token:', error);
         }
-    }
+    },
 
     async getToken(): Promise<string | null> {
-        if (!this.token) {
+        if (!currentToken) {
             await this.loadToken();
         }
-        return this.token;
-    }
+        return currentToken;
+    },
 
     async saveUser(user: User | null) {
         try {
@@ -115,7 +80,7 @@ class ApiService {
         } catch (error) {
             console.error('Error saving user:', error);
         }
-    }
+    },
 
     async getStoredUser(): Promise<User | null> {
         try {
@@ -125,12 +90,12 @@ class ApiService {
             console.error('Error getting stored user:', error);
             return null;
         }
-    }
+    },
 
     // ==================== Auth API ====================
 
     async register(credentials: RegisterCredentials): Promise<AuthResponse> {
-        const response = await this.axiosInstance.post<AuthResponse>('/auth/register', credentials);
+        const response = await axiosInstance.post<AuthResponse>('/auth/register', credentials);
         const data = response.data;
 
         if (data.token) {
@@ -139,10 +104,10 @@ class ApiService {
         }
 
         return data;
-    }
+    },
 
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        const response = await this.axiosInstance.post<AuthResponse>('/auth/login', credentials);
+        const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
         const data = response.data;
 
         if (data.token) {
@@ -151,15 +116,15 @@ class ApiService {
         }
 
         return data;
-    }
+    },
 
     async getProfile(): Promise<User> {
-        const response = await this.axiosInstance.get<User>('/auth/profile');
+        const response = await axiosInstance.get<User>('/auth/profile');
         return response.data;
-    }
+    },
 
     async updateProfile(data: UpdateProfileData): Promise<ProfileUpdateResponse> {
-        const response = await this.axiosInstance.put<ProfileUpdateResponse>('/auth/profile', data);
+        const response = await axiosInstance.put<ProfileUpdateResponse>('/auth/profile', data);
         const result = response.data;
 
         if (result.user) {
@@ -167,63 +132,63 @@ class ApiService {
         }
 
         return result;
-    }
+    },
 
     async logout() {
         await this.setToken(null);
         await this.saveUser(null);
-    }
+    },
 
     // ==================== Categories API ====================
 
     async getCategories(page = 1, limit = 50): Promise<CategoriesResponse> {
-        const response = await this.axiosInstance.get<CategoriesResponse>('/categories', {
+        const response = await axiosInstance.get<CategoriesResponse>('/categories', {
             params: { page, limit },
         });
         return response.data;
-    }
+    },
 
     async getCategory(id: string): Promise<CategoryResponse> {
-        const response = await this.axiosInstance.get<CategoryResponse>(`/categories/${id}`);
+        const response = await axiosInstance.get<CategoryResponse>(`/categories/${id}`);
         return response.data;
-    }
+    },
 
     async createCategory(data: CreateCategoryData): Promise<CategoryResponse> {
-        const response = await this.axiosInstance.post<CategoryResponse>('/categories', data);
+        const response = await axiosInstance.post<CategoryResponse>('/categories', data);
         return response.data;
-    }
+    },
 
     async updateCategory(id: string, data: UpdateCategoryData): Promise<CategoryResponse> {
-        const response = await this.axiosInstance.put<CategoryResponse>(`/categories/${id}`, data);
+        const response = await axiosInstance.put<CategoryResponse>(`/categories/${id}`, data);
         return response.data;
-    }
+    },
 
     async deleteCategory(id: string): Promise<MessageResponse> {
-        const response = await this.axiosInstance.delete<MessageResponse>(`/categories/${id}`);
+        const response = await axiosInstance.delete<MessageResponse>(`/categories/${id}`);
         return response.data;
-    }
+    },
 
     // ==================== Wallets API ====================
 
     async getWallets(): Promise<{ wallets: Wallet[] }> {
-        const response = await this.axiosInstance.get<{ wallets: Wallet[] }>('/wallets');
+        const response = await axiosInstance.get<{ wallets: Wallet[] }>('/wallets');
         return response.data;
-    }
+    },
 
     async createWallet(data: { name: string; color?: string; icon?: string; balance?: number }): Promise<{ wallet: Wallet; message?: string }> {
-        const response = await this.axiosInstance.post<{ wallet: Wallet; message?: string }>('/wallets', data);
+        const response = await axiosInstance.post<{ wallet: Wallet; message?: string }>('/wallets', data);
         return response.data;
-    }
+    },
 
     async updateWallet(id: string, data: { name?: string; color?: string; icon?: string; balance?: number }): Promise<{ wallet: Wallet; message?: string }> {
-        const response = await this.axiosInstance.put<{ wallet: Wallet; message?: string }>(`/wallets/${id}`, data);
+        const response = await axiosInstance.put<{ wallet: Wallet; message?: string }>(`/wallets/${id}`, data);
         return response.data;
-    }
+    },
 
     async deleteWallet(id: string): Promise<MessageResponse> {
-        const response = await this.axiosInstance.delete<MessageResponse>(`/wallets/${id}`);
+        const response = await axiosInstance.delete<MessageResponse>(`/wallets/${id}`);
         return response.data;
-    }
+    },
 
     // ==================== Expenses API ====================
 
@@ -243,39 +208,39 @@ class ApiService {
         if (filters.type) params.type = filters.type;
         if (filters.walletId) params.walletId = filters.walletId;
 
-        const response = await this.axiosInstance.get<ExpensesResponse>('/expenses', { params });
+        const response = await axiosInstance.get<ExpensesResponse>('/expenses', { params });
         return response.data;
-    }
+    },
 
     async bulkDeleteExpenses(ids: string[]): Promise<MessageResponse> {
-        const response = await this.axiosInstance.post<MessageResponse>('/expenses/bulk-delete', { ids });
+        const response = await axiosInstance.post<MessageResponse>('/expenses/bulk-delete', { ids });
         return response.data;
-    }
+    },
 
     async getExpense(id: string): Promise<ExpenseResponse> {
-        const response = await this.axiosInstance.get<ExpenseResponse>(`/expenses/${id}`);
+        const response = await axiosInstance.get<ExpenseResponse>(`/expenses/${id}`);
         return response.data;
-    }
+    },
 
     async createExpense(data: CreateExpenseData): Promise<ExpenseResponse> {
-        const response = await this.axiosInstance.post<ExpenseResponse>('/expenses', data);
+        const response = await axiosInstance.post<ExpenseResponse>('/expenses', data);
         return response.data;
-    }
+    },
 
     async updateExpense(id: string, data: UpdateExpenseData): Promise<ExpenseResponse> {
-        const response = await this.axiosInstance.put<ExpenseResponse>(`/expenses/${id}`, data);
+        const response = await axiosInstance.put<ExpenseResponse>(`/expenses/${id}`, data);
         return response.data;
-    }
+    },
 
     async patchExpense(id: string, data: UpdateExpenseData): Promise<ExpenseResponse> {
-        const response = await this.axiosInstance.patch<ExpenseResponse>(`/expenses/${id}`, data);
+        const response = await axiosInstance.patch<ExpenseResponse>(`/expenses/${id}`, data);
         return response.data;
-    }
+    },
 
     async deleteExpense(id: string): Promise<MessageResponse> {
-        const response = await this.axiosInstance.delete<MessageResponse>(`/expenses/${id}`);
+        const response = await axiosInstance.delete<MessageResponse>(`/expenses/${id}`);
         return response.data;
-    }
+    },
 
     // ==================== Dashboard API ====================
 
@@ -284,41 +249,72 @@ class ApiService {
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
 
-        const response = await this.axiosInstance.get<DashboardSummaryResponse>('/dashboard/summary', { params });
+        const response = await axiosInstance.get<DashboardSummaryResponse>('/dashboard/summary', { params });
         return response.data;
-    }
+    },
 
     async getCategoryAnalytics(startDate?: string, endDate?: string): Promise<CategoryAnalyticsResponse> {
         const params: Record<string, string> = {};
         if (startDate) params.startDate = startDate;
         if (endDate) params.endDate = endDate;
 
-        const response = await this.axiosInstance.get<CategoryAnalyticsResponse>('/dashboard/category-analytics', { params });
+        const response = await axiosInstance.get<CategoryAnalyticsResponse>('/dashboard/category-analytics', { params });
         return response.data;
-    }
+    },
 
     async getMonthlyTrends(year?: number): Promise<MonthlyTrendsResponse> {
         const params: Record<string, number> = {};
         if (year) params.year = year;
 
-        const response = await this.axiosInstance.get<MonthlyTrendsResponse>('/dashboard/monthly-trends', { params });
+        const response = await axiosInstance.get<MonthlyTrendsResponse>('/dashboard/monthly-trends', { params });
         return response.data;
-    }
+    },
 
     async getRecentExpenses(limit = 5): Promise<RecentExpensesResponse> {
-        const response = await this.axiosInstance.get<RecentExpensesResponse>('/dashboard/recent-expenses', {
+        const response = await axiosInstance.get<RecentExpensesResponse>('/dashboard/recent-expenses', {
             params: { limit },
         });
         return response.data;
-    }
+    },
 
     // ==================== Health API ====================
 
     async healthCheck(): Promise<{ status: string; message: string }> {
-        const response = await this.axiosInstance.get<{ status: string; message: string }>('/health');
+        const response = await axiosInstance.get<{ status: string; message: string }>('/health');
         return response.data;
     }
-}
+};
 
-// Export singleton instance
-export const api = new ApiService();
+// Add request interceptor to include auth token
+axiosInstance.interceptors.request.use(
+    async (config) => {
+        const token = await api.getToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Add response interceptor for error handling
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error: AxiosError) => {
+        // Log the exact endpoint that failed so we know what went wrong
+        console.error(`API Error on ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status);
+        
+        if (error.response?.data) {
+            // Some backends send { error: '...' } and some send { message: '...' }
+            const errorData = error.response.data as any;
+            const errorMessage = errorData?.error || errorData?.message || typeof errorData === 'string' ? errorData : 'An error occurred';
+            throw new Error(errorMessage);
+        }
+        throw error;
+    }
+);
+
+// Initialize token loading
+api.loadToken();
