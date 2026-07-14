@@ -11,7 +11,6 @@ import {
     LayoutAnimation,
     Platform,
     ScrollView,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -127,7 +126,7 @@ export default function CategoryDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor }}>
         <ActivityIndicator size="large" color={tintColor} />
       </View>
     );
@@ -135,53 +134,46 @@ export default function CategoryDetailScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor }]}
+      className="flex-1"
+      style={{ backgroundColor }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Preview */}
-        <View style={styles.previewContainer}>
-          <View style={[styles.previewIcon, { backgroundColor: color }]}>
-            <Text style={styles.previewEmoji}>{icon}</Text>
+        <View className="items-center mb-6 pt-2">
+          <View className="w-20 h-20 rounded-[20px] justify-center items-center mb-4" style={{ backgroundColor: color }}>
+            <Text className="text-4xl">{icon}</Text>
           </View>
-          <Text style={[styles.previewName, { color: textColor }]}>
+          <Text className="text-xl font-semibold mb-2 text-center" style={{ color: textColor }}>
             {name || 'Category Name'}
           </Text>
-          <View style={[styles.typeBadge, { backgroundColor: type === 'EXPENSE' ? '#ef444420' : '#22c55e20' }]}>
-            <Text style={[styles.typeBadgeText, { color: type === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}>
+          <View className="px-3 py-1 rounded-xl" style={{ backgroundColor: type === 'EXPENSE' ? '#ef444420' : '#22c55e20' }}>
+            <Text className="text-xs font-bold" style={{ color: type === 'EXPENSE' ? '#ef4444' : '#22c55e' }}>
               {type}
             </Text>
           </View>
         </View>
 
         {/* Category Type Switcher */}
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: textColor }]}>Category Type *</Text>
-          <View style={[styles.segmentContainer, { backgroundColor: cardBg }]}>
+        <View className="mb-5">
+          <Text className="text-sm font-semibold mb-2" style={{ color: textColor }}>Category Type *</Text>
+          <View className="flex-row rounded-xl p-1" style={{ backgroundColor: cardBg }}>
             {(['EXPENSE', 'INCOME'] as const).map((t) => (
               <TouchableOpacity
                 key={t}
-                style={[
-                  styles.segmentButton,
-                  type === t && {
-                    backgroundColor: t === 'EXPENSE' ? '#ef4444' : '#22c55e',
-                  },
-                ]}
+                className={`flex-1 py-3 items-center rounded-lg ${type === t ? (t === 'EXPENSE' ? 'bg-red-500' : 'bg-green-500') : ''}`}
                 onPress={() => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                   setType(t);
                 }}
               >
                 <Text
-                  style={[
-                    styles.segmentButtonText,
-                    { color: textColor },
-                    type === t && { color: '#fff', fontWeight: '700' },
-                  ]}
+                  className={`text-sm font-semibold ${type === t ? 'text-white' : ''}`}
+                  style={type !== t ? { color: textColor } : {}}
                 >
                   {t === 'EXPENSE' ? 'Expense' : 'Income'}
                 </Text>
@@ -191,10 +183,11 @@ export default function CategoryDetailScreen() {
         </View>
 
         {/* Name */}
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: textColor }]}>Name *</Text>
+        <View className="mb-5">
+          <Text className="text-sm font-semibold mb-2" style={{ color: textColor }}>Name *</Text>
           <TextInput
-            style={[styles.input, { color: textColor, borderColor: '#e5e7eb' }]}
+            className="border rounded-xl p-3.5 text-base"
+            style={{ color: textColor, borderColor: '#e5e7eb' }}
             value={name}
             onChangeText={setName}
             placeholder="e.g., Salary, Food, Utilities"
@@ -203,18 +196,19 @@ export default function CategoryDetailScreen() {
         </View>
 
         {/* Icon */}
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: textColor }]}>Icon</Text>
+        <View className="mb-5">
+          <Text className="text-sm font-semibold mb-2" style={{ color: textColor }}>Icon</Text>
           <TouchableOpacity
-            style={[styles.pickerButton, { borderColor: '#e5e7eb' }]}
+            className="flex-row items-center justify-between border rounded-xl p-3.5"
+            style={{ borderColor: '#e5e7eb' }}
             onPress={() => {
               setShowIconPicker(!showIconPicker);
               setShowColorPicker(false);
             }}
           >
-            <View style={styles.iconDisplay}>
-              <Text style={styles.iconEmoji}>{icon}</Text>
-              <Text style={[styles.pickerText, { color: textColor }]}>
+            <View className="flex-row items-center gap-3">
+              <Text className="text-2xl">{icon}</Text>
+              <Text className="text-base" style={{ color: textColor }}>
                 Select an icon
               </Text>
             </View>
@@ -224,21 +218,19 @@ export default function CategoryDetailScreen() {
 
         {/* Icon Picker */}
         {showIconPicker && (
-          <View style={[styles.gridContainer, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
-            <View style={styles.iconGrid}>
+          <View className="border rounded-xl p-3 mb-5" style={{ borderColor: '#e5e7eb', backgroundColor: cardBg }}>
+            <View className="flex-row flex-wrap gap-2">
               {CATEGORY_ICONS.map((emoji, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[
-                    styles.iconOption,
-                    icon === emoji && { backgroundColor: tintColor + '30' },
-                  ]}
+                  className="w-12 h-12 rounded-xl justify-center items-center"
+                  style={icon === emoji ? { backgroundColor: tintColor + '30' } : {}}
                   onPress={() => {
                     setIcon(emoji);
                     setShowIconPicker(false);
                   }}
                 >
-                  <Text style={styles.iconOptionText}>{emoji}</Text>
+                  <Text className="text-2xl">{emoji}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -246,18 +238,19 @@ export default function CategoryDetailScreen() {
         )}
 
         {/* Color */}
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: textColor }]}>Color</Text>
+        <View className="mb-5">
+          <Text className="text-sm font-semibold mb-2" style={{ color: textColor }}>Color</Text>
           <TouchableOpacity
-            style={[styles.pickerButton, { borderColor: '#e5e7eb' }]}
+            className="flex-row items-center justify-between border rounded-xl p-3.5"
+            style={{ borderColor: '#e5e7eb' }}
             onPress={() => {
               setShowColorPicker(!showColorPicker);
               setShowIconPicker(false);
             }}
           >
-            <View style={styles.colorDisplay}>
-              <View style={[styles.colorDot, { backgroundColor: color }]} />
-              <Text style={[styles.pickerText, { color: textColor }]}>
+            <View className="flex-row items-center gap-3">
+              <View className="w-6 h-6 rounded-full" style={{ backgroundColor: color }} />
+              <Text className="text-base" style={{ color: textColor }}>
                 {color}
               </Text>
             </View>
@@ -267,16 +260,13 @@ export default function CategoryDetailScreen() {
 
         {/* Color Picker */}
         {showColorPicker && (
-          <View style={[styles.gridContainer, { borderColor: '#e5e7eb', backgroundColor: cardBg }]}>
-            <View style={styles.colorGrid}>
+          <View className="border rounded-xl p-3 mb-5" style={{ borderColor: '#e5e7eb', backgroundColor: cardBg }}>
+            <View className="flex-row flex-wrap gap-2">
               {CATEGORY_COLORS.map((clr, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: clr },
-                    color === clr && styles.colorOptionSelected,
-                  ]}
+                  className={`w-11 h-11 rounded-[22px] justify-center items-center ${color === clr ? 'border-[3px] border-white shadow-md elevation-3' : ''}`}
+                  style={[{ backgroundColor: clr }]}
                   onPress={() => {
                     setColor(clr);
                     setShowColorPicker(false);
@@ -293,14 +283,15 @@ export default function CategoryDetailScreen() {
 
         {/* Save Button */}
         <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: type === 'EXPENSE' ? '#ef4444' : '#22c55e' }]}
+          className="p-4 rounded-xl items-center mt-2"
+          style={{ backgroundColor: type === 'EXPENSE' ? '#ef4444' : '#22c55e' }}
           onPress={handleSave}
           disabled={isSaving}
         >
           {isSaving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>
+            <Text className="text-white text-base font-semibold">
               {isNew ? 'Create Category' : 'Save Changes'}
             </Text>
           )}
@@ -309,186 +300,15 @@ export default function CategoryDetailScreen() {
         {/* Delete Button */}
         {!isNew && (
           <TouchableOpacity
-            style={[styles.deleteButton, { borderColor: '#ef4444' }]}
+            className="flex-row items-center justify-center p-4 border rounded-xl mt-4 gap-2"
+            style={{ borderColor: '#ef4444' }}
             onPress={handleDelete}
           >
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            <Text style={styles.deleteButtonText}>Delete Category</Text>
+            <Text className="text-red-500 text-base font-semibold">Delete Category</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  previewContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingTop: 8,
-  },
-  previewIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  previewEmoji: {
-    fontSize: 36,
-  },
-  previewName: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  typeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  typeBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-  },
-  pickerText: {
-    fontSize: 16,
-  },
-  iconDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconEmoji: {
-    fontSize: 24,
-  },
-  colorDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  colorDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  gridContainer: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-  },
-  iconGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  iconOption: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconOptionText: {
-    fontSize: 24,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  colorOption: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorOptionSelected: {
-    borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  saveButton: {
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 1,
-    borderRadius: 12,
-    marginTop: 16,
-    gap: 8,
-  },
-  deleteButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Type Switcher Segment control
-  segmentContainer: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  segmentButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
