@@ -17,7 +17,6 @@ import {
     Platform,
     Pressable,
     ScrollView,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -286,39 +285,34 @@ export default function ExpenseDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor }]}>
+      <View className="flex-1 justify-center items-center gap-3" style={{ backgroundColor }}>
         <ActivityIndicator size="large" color={tintColor} />
-        <Text style={[styles.loadingText, { color: textColor }]}>Loading...</Text>
+        <Text className="text-sm" style={{ color: textColor }}>Loading...</Text>
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor }]}
+      className="flex-1"
+      style={{ backgroundColor }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/* Transaction Type Segment Control */}
-        <View style={[styles.segmentContainer, { backgroundColor: cardBg }]}>
+        <View className="flex-row rounded-xl p-1 mb-5" style={{ backgroundColor: cardBg }}>
           {(['EXPENSE', 'INCOME', 'TRANSFER'] as const).map((t) => (
             <TouchableOpacity
               key={t}
-              style={[
-                styles.segmentButton,
-                type === t && {
-                  backgroundColor: t === 'EXPENSE' ? '#ef4444' : t === 'INCOME' ? '#22c55e' : '#64748b',
-                },
-              ]}
+              className={`flex-1 py-3 items-center rounded-lg ${type === t ? (t === 'EXPENSE' ? 'bg-red-500' : t === 'INCOME' ? 'bg-green-500' : 'bg-slate-500') : ''}`}
               onPress={() => {
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 Haptics.selectionAsync();
                 setType(t);
-                // Reset category/wallets logically
                 if (t === 'TRANSFER') {
                   setCategoryId(undefined);
                   if (walletId && walletId === toWalletId) {
@@ -330,11 +324,8 @@ export default function ExpenseDetailScreen() {
               }}
             >
               <Text
-                style={[
-                  styles.segmentButtonText,
-                  { color: textColor },
-                  type === t && { color: '#fff', fontWeight: '700' },
-                ]}
+                className={`text-sm font-semibold ${type === t ? 'text-white' : ''}`}
+                style={type !== t ? { color: textColor } : {}}
               >
                 {t}
               </Text>
@@ -343,27 +334,27 @@ export default function ExpenseDetailScreen() {
         </View>
 
         {/* Amount Preview Card */}
-        <View style={[styles.amountCard, { backgroundColor: getHeaderColor() }]}>
-          <Text style={[styles.amountLabel, { color: 'rgba(255,255,255,0.8)' }]}>
+        <View className="rounded-[20px] p-6 items-center mb-6 shadow-md elevation-4" style={{ backgroundColor: getHeaderColor() }}>
+          <Text className="text-sm font-medium mb-2 opacity-70" style={{ color: 'rgba(255,255,255,0.8)' }}>
             {isNew ? `New ${type.toLowerCase()}` : `Edit ${type.toLowerCase()}`}
           </Text>
-          <View style={styles.amountDisplay}>
-            <Text style={[styles.amountSymbol, { color: '#fff' }]}>
+          <View className="flex-row items-start">
+            <Text className="text-3xl font-semibold mt-1 text-white">
               {getAmountSymbol()} {selectedCurrency?.symbol || '৳'}
             </Text>
-            <Text style={[styles.amountValue, { color: '#fff' }]}>
+            <Text className="text-5xl font-bold text-white">
               {displayAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
           </View>
           {type !== 'TRANSFER' && selectedCategory && (
-            <View style={[styles.categoryBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={styles.categoryBadgeIcon}>{selectedCategory.icon || '📦'}</Text>
-              <Text style={[styles.categoryBadgeText, { color: '#fff' }]}>{selectedCategory.name}</Text>
+            <View className="flex-row items-center px-4 py-2 rounded-[20px] mt-4 gap-2" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+              <Text className="text-lg">{selectedCategory.icon || '📦'}</Text>
+              <Text className="text-sm font-semibold text-white">{selectedCategory.name}</Text>
             </View>
           )}
           {type === 'TRANSFER' && selectedWallet && selectedToWallet && (
-            <View style={[styles.categoryBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={[styles.categoryBadgeText, { color: '#fff' }]}>
+            <View className="flex-row items-center px-4 py-2 rounded-[20px] mt-4 gap-2" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+              <Text className="text-sm font-semibold text-white">
                 {selectedWallet.name} ➔ {selectedToWallet.name}
               </Text>
             </View>
@@ -371,16 +362,17 @@ export default function ExpenseDetailScreen() {
         </View>
 
         {/* Form Section */}
-        <View style={[styles.formSection, { backgroundColor: cardBg }]}>
+        <View className="rounded-2xl p-1 mb-4" style={{ backgroundColor: cardBg }}>
           {/* Title Input */}
-          <View style={styles.inputRow}>
-            <View style={[styles.inputIcon, { backgroundColor: tintColor + '20' }]}>
+          <View className="flex-row items-center p-4">
+            <View className="w-10 h-10 rounded-xl justify-center items-center mr-3" style={{ backgroundColor: tintColor + '20' }}>
               <Ionicons name="text" size={20} color={tintColor} />
             </View>
-            <View style={styles.inputWrapper}>
-              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Title</Text>
+            <View className="flex-1">
+              <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">Title</Text>
               <TextInput
-                style={[styles.inputField, { color: textColor }]}
+                className="text-base font-medium p-0"
+                style={{ color: textColor }}
                 value={title}
                 onChangeText={setTitle}
                 placeholder={type === 'TRANSFER' ? "e.g., Transfer to pocket money" : "What is this transaction for?"}
@@ -389,17 +381,18 @@ export default function ExpenseDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View className="h-[1px] ml-[68px] bg-gray-200" />
 
           {/* Amount Input */}
-          <View style={styles.inputRow}>
-            <View style={[styles.inputIcon, { backgroundColor: '#22c55e20' }]}>
+          <View className="flex-row items-center p-4">
+            <View className="w-10 h-10 rounded-xl justify-center items-center mr-3 bg-green-500/20">
               <Ionicons name="cash" size={20} color="#22c55e" />
             </View>
-            <View style={[styles.inputWrapper, { flex: 1 }]}>
-              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Amount</Text>
+            <View className="flex-1">
+              <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">Amount</Text>
               <TextInput
-                style={[styles.inputField, styles.amountInput, { color: textColor }]}
+                className="text-lg font-semibold p-0"
+                style={{ color: textColor }}
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0.00"
@@ -408,39 +401,39 @@ export default function ExpenseDetailScreen() {
               />
             </View>
             <TouchableOpacity
-              style={[styles.currencyButton, { borderColor: '#e5e7eb' }]}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 flex-row items-center gap-1"
               onPress={() => setShowCurrencyPicker(true)}
             >
-              <Text style={[styles.currencyButtonText, { color: textColor }]}>
+              <Text className="text-sm font-semibold" style={{ color: textColor }}>
                 {selectedCurrency?.symbol} {currency}
               </Text>
               <Ionicons name="chevron-down" size={14} color="#9ca3af" />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.divider} />
+          <View className="h-[1px] ml-[68px] bg-gray-200" />
 
           {/* Source Wallet Selector */}
           <Pressable 
-            style={styles.inputRow}
+            className="flex-row items-center p-4"
             onPress={() => setShowWalletPicker(true)}
           >
-            <View style={[styles.inputIcon, { backgroundColor: '#6366f120' }]}>
+            <View className="w-10 h-10 rounded-xl justify-center items-center mr-3 bg-indigo-500/20">
               <Ionicons name="wallet" size={20} color="#6366f1" />
             </View>
-            <View style={styles.inputWrapper}>
-              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>
+            <View className="flex-1">
+              <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">
                 {type === 'TRANSFER' ? 'From Wallet (Source)' : 'Account / Wallet'}
               </Text>
               {selectedWallet ? (
-                <View style={styles.selectedCategoryRow}>
-                  <Text style={styles.selectedCategoryIcon}>{selectedWallet.icon || '💵'}</Text>
-                  <Text style={[styles.inputField, { color: textColor }]}>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-xl">{selectedWallet.icon || '💵'}</Text>
+                  <Text className="text-base font-medium p-0" style={{ color: textColor }}>
                     {selectedWallet.name} (৳{selectedWallet.balance.toFixed(2)})
                   </Text>
                 </View>
               ) : (
-                <Text style={[styles.inputField, { color: '#9ca3af' }]}>
+                <Text className="text-base font-medium p-0 text-gray-400">
                   Select a wallet
                 </Text>
               )}
@@ -450,26 +443,26 @@ export default function ExpenseDetailScreen() {
 
           {type === 'TRANSFER' && (
             <>
-              <View style={styles.divider} />
+              <View className="h-[1px] ml-[68px] bg-gray-200" />
               {/* Destination Wallet Selector */}
               <Pressable 
-                style={styles.inputRow}
+                className="flex-row items-center p-4"
                 onPress={() => setShowToWalletPicker(true)}
               >
-                <View style={[styles.inputIcon, { backgroundColor: '#8b5cf620' }]}>
+                <View className="w-10 h-10 rounded-xl justify-center items-center mr-3 bg-purple-500/20">
                   <Ionicons name="arrow-forward-circle" size={20} color="#8b5cf6" />
                 </View>
-                <View style={styles.inputWrapper}>
-                  <Text style={[styles.inputLabel, { color: '#6b7280' }]}>To Wallet (Destination)</Text>
+                <View className="flex-1">
+                  <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">To Wallet (Destination)</Text>
                   {selectedToWallet ? (
-                    <View style={styles.selectedCategoryRow}>
-                      <Text style={styles.selectedCategoryIcon}>{selectedToWallet.icon || '💵'}</Text>
-                      <Text style={[styles.inputField, { color: textColor }]}>
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-xl">{selectedToWallet.icon || '💵'}</Text>
+                      <Text className="text-base font-medium p-0" style={{ color: textColor }}>
                         {selectedToWallet.name} (৳{selectedToWallet.balance.toFixed(2)})
                       </Text>
                     </View>
                   ) : (
-                    <Text style={[styles.inputField, { color: '#9ca3af' }]}>
+                    <Text className="text-base font-medium p-0 text-gray-400">
                       Select destination wallet
                     </Text>
                   )}
@@ -481,26 +474,26 @@ export default function ExpenseDetailScreen() {
 
           {type !== 'TRANSFER' && (
             <>
-              <View style={styles.divider} />
+              <View className="h-[1px] ml-[68px] bg-gray-200" />
               {/* Category Selector */}
               <Pressable 
-                style={styles.inputRow}
+                className="flex-row items-center p-4"
                 onPress={() => setShowCategoryPicker(true)}
               >
-                <View style={[styles.inputIcon, { backgroundColor: '#8b5cf620' }]}>
+                <View className="w-10 h-10 rounded-xl justify-center items-center mr-3 bg-purple-500/20">
                   <Ionicons name="folder" size={20} color="#8b5cf6" />
                 </View>
-                <View style={styles.inputWrapper}>
-                  <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Category</Text>
+                <View className="flex-1">
+                  <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">Category</Text>
                   {selectedCategory ? (
-                    <View style={styles.selectedCategoryRow}>
-                      <Text style={styles.selectedCategoryIcon}>{selectedCategory.icon || '📦'}</Text>
-                      <Text style={[styles.inputField, { color: textColor }]}>
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-xl">{selectedCategory.icon || '📦'}</Text>
+                      <Text className="text-base font-medium p-0" style={{ color: textColor }}>
                         {selectedCategory.name}
                       </Text>
                     </View>
                   ) : (
-                    <Text style={[styles.inputField, { color: '#9ca3af' }]}>
+                    <Text className="text-base font-medium p-0 text-gray-400">
                       Select a category
                     </Text>
                   )}
@@ -510,36 +503,37 @@ export default function ExpenseDetailScreen() {
             </>
           )}
 
-          <View style={styles.divider} />
+          <View className="h-[1px] ml-[68px] bg-gray-200" />
 
           {/* Date Selector */}
           <Pressable 
-            style={styles.inputRow}
+            className="flex-row items-center p-4"
             onPress={() => setShowDatePicker(true)}
           >
-            <View style={[styles.inputIcon, { backgroundColor: '#f59e0b20' }]}>
+            <View className="w-10 h-10 rounded-xl justify-center items-center mr-3 bg-amber-500/20">
               <Ionicons name="calendar" size={20} color="#f59e0b" />
             </View>
-            <View style={styles.inputWrapper}>
-              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Date</Text>
-              <Text style={[styles.inputField, { color: textColor }]}>
+            <View className="flex-1">
+              <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">Date</Text>
+              <Text className="text-base font-medium p-0" style={{ color: textColor }}>
                 {formatDisplayDate(date)}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </Pressable>
 
-          <View style={styles.divider} />
+          <View className="h-[1px] ml-[68px] bg-gray-200" />
 
           {/* Description Input */}
-          <View style={[styles.inputRow, { alignItems: 'flex-start' }]}>
-            <View style={[styles.inputIcon, { backgroundColor: '#06b6d420', marginTop: 4 }]}>
+          <View className="flex-row items-start p-4">
+            <View className="w-10 h-10 rounded-xl justify-center items-center mr-3 bg-cyan-500/20 mt-1">
               <Ionicons name="document-text" size={20} color="#06b6d4" />
             </View>
-            <View style={styles.inputWrapper}>
-              <Text style={[styles.inputLabel, { color: '#6b7280' }]}>Note (optional)</Text>
+            <View className="flex-1">
+              <Text className="text-xs font-medium mb-1 opacity-60 text-gray-500">Note (optional)</Text>
               <TextInput
-                style={[styles.inputField, styles.noteInput, { color: textColor }]}
+                className="text-[15px] min-h-[60px] p-0 font-medium"
+                style={{ color: textColor, textAlignVertical: 'top' }}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Add a note..."
@@ -552,9 +546,10 @@ export default function ExpenseDetailScreen() {
         </View>
 
         {/* Action Buttons */}
-        <View style={styles.actionSection}>
+        <View className="mt-2 gap-3">
           <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: getHeaderColor() }, isSaving && styles.buttonDisabled]}
+            className={`p-4 rounded-xl items-center mt-2 ${isSaving ? 'opacity-60' : ''}`}
+            style={{ backgroundColor: getHeaderColor() }}
             onPress={handleSave}
             disabled={isSaving}
             activeOpacity={0.8}
@@ -562,9 +557,9 @@ export default function ExpenseDetailScreen() {
             {isSaving ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <View style={styles.saveButtonContent}>
+              <View className="flex-row items-center justify-center gap-2">
                 <Ionicons name={isNew ? "add-circle" : "checkmark-circle"} size={22} color="#fff" />
-                <Text style={styles.saveButtonText}>
+                <Text className="text-white text-base font-semibold">
                   {isNew ? `Add ${type.charAt(0) + type.slice(1).toLowerCase()}` : 'Save Changes'}
                 </Text>
               </View>
@@ -573,21 +568,21 @@ export default function ExpenseDetailScreen() {
 
           {isNew ? (
             <TouchableOpacity
-              style={styles.clearFormButton}
+              className="flex-row items-center justify-center p-4 border border-gray-300 rounded-[14px] bg-gray-50 gap-2"
               onPress={handleClearForm}
               activeOpacity={0.8}
             >
               <Ionicons name="refresh-outline" size={20} color="#6b7280" />
-              <Text style={styles.clearFormButtonText}>Clear Form</Text>
+              <Text className="text-gray-500 text-base font-medium">Clear Form</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={styles.deleteButtonOutline}
+              className="flex-row items-center justify-center p-4 border-2 border-red-500 rounded-[14px] gap-2"
               onPress={handleDeletePress}
               activeOpacity={0.8}
             >
               <Ionicons name="trash-outline" size={20} color="#ef4444" />
-              <Text style={styles.deleteButtonOutlineText}>Delete Transaction</Text>
+              <Text className="text-red-500 text-base font-semibold">Delete Transaction</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -600,10 +595,10 @@ export default function ExpenseDetailScreen() {
         animationType="fade"
         onRequestClose={handleCancelDelete}
       >
-        <Pressable style={styles.deleteOverlay} onPress={handleCancelDelete}>
+        <Pressable className="flex-1 bg-black/60 justify-center items-center p-6" onPress={handleCancelDelete}>
           <Animated.View 
+            className="w-full rounded-[24px] p-6 items-center shadow-lg elevation-8"
             style={[
-              styles.deleteModal,
               { 
                 backgroundColor,
                 transform: [{ scale: deleteAnim }],
@@ -611,31 +606,31 @@ export default function ExpenseDetailScreen() {
               }
             ]}
           >
-            <View style={styles.deleteIconContainer}>
+            <View className="w-[72px] h-[72px] rounded-full bg-red-500/10 justify-center items-center mb-4">
               <Ionicons name="warning" size={48} color="#ef4444" />
             </View>
-            <Text style={[styles.deleteModalTitle, { color: textColor }]}>
+            <Text className="text-xl font-bold mb-2" style={{ color: textColor }}>
               Delete Transaction?
             </Text>
-            <Text style={[styles.deleteModalMessage, { color: '#6b7280' }]}>
+            <Text className="text-[15px] text-center opacity-70 mb-6 leading-snug text-gray-500">
               This action cannot be undone. The transaction &quot;{title}&quot; will be permanently removed.
             </Text>
-            <View style={styles.deleteModalActions}>
+            <View className="flex-row gap-3 w-full">
               <TouchableOpacity
-                style={[styles.deleteModalButton, styles.cancelButton]}
+                className="flex-1 p-4 rounded-[14px] items-center border border-gray-200"
                 onPress={handleCancelDelete}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text className="text-base font-semibold" style={{ color: textColor }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.deleteModalButton, styles.confirmDeleteButton]}
+                className="flex-1 p-4 rounded-[14px] items-center bg-red-500"
                 onPress={handleConfirmDelete}
                 disabled={isDeleting}
               >
                 {isDeleting ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.confirmDeleteButtonText}>Delete</Text>
+                  <Text className="text-white text-base font-semibold">Delete</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -653,12 +648,12 @@ export default function ExpenseDetailScreen() {
           setShowCalendar(false);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor, maxHeight: '70%' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select Date</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Date</Text>
               <TouchableOpacity 
-                style={styles.modalCloseButton}
+                className="p-2"
                 onPress={() => {
                   setShowDatePicker(false);
                   setShowCalendar(false);
@@ -669,15 +664,15 @@ export default function ExpenseDetailScreen() {
             </View>
             
             {/* Quick Date Buttons */}
-            <View style={styles.quickDatesContainer}>
+            <View className="flex-row flex-wrap p-4 gap-2.5">
               {QUICK_DATES.map((item) => {
                 const dateValue = getDateString(item.days);
                 const isSelected = date === dateValue;
                 return (
                   <TouchableOpacity
                     key={item.label}
+                    className="px-4 py-3 rounded-xl border"
                     style={[
-                      styles.quickDateButton,
                       { borderColor: isSelected ? tintColor : '#e5e7eb' },
                       isSelected && { backgroundColor: tintColor + '15' },
                     ]}
@@ -688,10 +683,7 @@ export default function ExpenseDetailScreen() {
                       setShowCalendar(false);
                     }}
                   >
-                    <Text style={[
-                      styles.quickDateText, 
-                      { color: isSelected ? tintColor : textColor }
-                    ]}>
+                    <Text className="text-sm font-medium" style={{ color: isSelected ? tintColor : textColor }}>
                       {item.label}
                     </Text>
                   </TouchableOpacity>
@@ -700,10 +692,10 @@ export default function ExpenseDetailScreen() {
             </View>
 
             {/* Pick from Calendar Button */}
-            <View style={styles.calendarContainer}>
+            <View className="px-4 pb-2">
               <TouchableOpacity
+                className="flex-row items-center justify-center p-3.5 rounded-xl border gap-2"
                 style={[
-                  styles.pickCalendarButton,
                   { borderColor: showCalendar ? tintColor : '#e5e7eb' },
                   showCalendar && { backgroundColor: tintColor + '10' },
                 ]}
@@ -718,10 +710,7 @@ export default function ExpenseDetailScreen() {
                   size={20} 
                   color={showCalendar ? tintColor : '#6b7280'} 
                 />
-                <Text style={[
-                  styles.pickCalendarText,
-                  { color: showCalendar ? tintColor : textColor }
-                ]}>
+                <Text className="text-[15px] font-medium" style={{ color: showCalendar ? tintColor : textColor }}>
                   Pick from calendar
                 </Text>
                 <Ionicons 
@@ -733,11 +722,11 @@ export default function ExpenseDetailScreen() {
 
               {/* Calendar Picker - Only show when toggled */}
               {showCalendar && (
-                <View style={styles.datePickerWrapper}>
+                <View className="items-center justify-center mt-3 pt-3 border-t border-gray-200 bg-indigo-500/5 rounded-xl p-3 overflow-hidden">
                   {/* Selected Date Header */}
-                  <View style={styles.selectedDateHeader}>
+                  <View className="flex-row items-center gap-2 mb-2 pb-2 border-b border-gray-200 w-full justify-center">
                     <Ionicons name="calendar" size={18} color={tintColor} />
-                    <Text style={[styles.selectedDateText, { color: textColor }]}>
+                    <Text className="text-[15px] font-semibold" style={{ color: textColor }}>
                       Selected: {formatDisplayDate(date)}
                     </Text>
                   </View>
@@ -764,11 +753,11 @@ export default function ExpenseDetailScreen() {
                     }}
                     maximumDate={new Date()}
                     themeVariant="light"
-                    style={styles.datePicker}
+                    className="w-full h-[150px]"
                   />
                   
                   {Platform.OS === 'ios' && (
-                    <Text style={styles.calendarHint}>
+                    <Text className="text-xs text-gray-400 mt-2 italic">
                       Scroll to select date
                     </Text>
                   )}
@@ -777,13 +766,14 @@ export default function ExpenseDetailScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.dateConfirmButton, { backgroundColor: tintColor }]}
+              className="m-4 p-4 rounded-xl items-center"
+              style={{ backgroundColor: tintColor }}
               onPress={() => {
                 setShowDatePicker(false);
                 setShowCalendar(false);
               }}
             >
-              <Text style={styles.dateConfirmButtonText}>Done</Text>
+              <Text className="text-white text-base font-semibold">Done</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -796,12 +786,12 @@ export default function ExpenseDetailScreen() {
         animationType="slide"
         onRequestClose={() => setShowCurrencyPicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select Currency</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Currency</Text>
               <TouchableOpacity 
-                style={styles.modalCloseButton}
+                className="p-2"
                 onPress={() => setShowCurrencyPicker(false)}
               >
                 <Ionicons name="close" size={24} color={textColor} />
@@ -813,23 +803,21 @@ export default function ExpenseDetailScreen() {
               showsVerticalScrollIndicator={false}
               renderItem={({ item: curr }) => (
                 <TouchableOpacity
-                  style={[
-                    styles.modalOptionItem,
-                    currency === curr.code && { backgroundColor: tintColor + '15' },
-                  ]}
+                  className="flex-row items-center justify-between p-4 border-b border-gray-200"
+                  style={currency === curr.code ? { backgroundColor: tintColor + '15' } : {}}
                   onPress={() => {
                     Haptics.selectionAsync();
                     setCurrency(curr.code);
                     setShowCurrencyPicker(false);
                   }}
                 >
-                  <View style={styles.modalOptionLeft}>
-                    <View style={[styles.currencySymbolBadge, { backgroundColor: tintColor + '20' }]}>
-                      <Text style={[styles.currencySymbol, { color: tintColor }]}>{curr.symbol}</Text>
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-11 h-11 rounded-xl justify-center items-center" style={{ backgroundColor: tintColor + '20' }}>
+                      <Text className="text-2xl w-10 text-center" style={{ color: tintColor }}>{curr.symbol}</Text>
                     </View>
                     <View>
-                      <Text style={[styles.currencyCode, { color: textColor }]}>{curr.code}</Text>
-                      <Text style={[styles.currencyName, { color: '#6b7280' }]}>{curr.name}</Text>
+                      <Text className="text-base font-semibold" style={{ color: textColor }}>{curr.code}</Text>
+                      <Text className="text-[13px] text-gray-500">{curr.name}</Text>
                     </View>
                   </View>
                   {currency === curr.code && (
@@ -849,12 +837,12 @@ export default function ExpenseDetailScreen() {
         animationType="slide"
         onRequestClose={() => setShowWalletPicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select Wallet</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Wallet</Text>
               <TouchableOpacity 
-                style={styles.modalCloseButton}
+                className="p-2"
                 onPress={() => setShowWalletPicker(false)}
               >
                 <Ionicons name="close" size={24} color={textColor} />
@@ -868,23 +856,21 @@ export default function ExpenseDetailScreen() {
                 const isSelected = walletId === w.id;
                 return (
                   <TouchableOpacity
-                    style={[
-                      styles.modalOptionItem,
-                      isSelected && { backgroundColor: tintColor + '15' },
-                    ]}
+                    className="flex-row items-center justify-between p-4 border-b border-gray-200"
+                    style={isSelected ? { backgroundColor: tintColor + '15' } : {}}
                     onPress={() => {
                       Haptics.selectionAsync();
                       setWalletId(w.id);
                       setShowWalletPicker(false);
                     }}
                   >
-                    <View style={styles.modalOptionLeft}>
-                      <View style={[styles.currencySymbolBadge, { backgroundColor: (w.color || tintColor) + '20' }]}>
-                        <Text style={styles.categoryBadgeIcon}>{w.icon || '💵'}</Text>
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-11 h-11 rounded-xl justify-center items-center" style={{ backgroundColor: (w.color || tintColor) + '20' }}>
+                        <Text className="text-lg">{w.icon || '💵'}</Text>
                       </View>
                       <View>
-                        <Text style={[styles.currencyCode, { color: textColor }]}>{w.name}</Text>
-                        <Text style={[styles.currencyName, { color: '#6b7280' }]}>৳{w.balance.toFixed(2)}</Text>
+                        <Text className="text-base font-semibold" style={{ color: textColor }}>{w.name}</Text>
+                        <Text className="text-[13px] text-gray-500">৳{w.balance.toFixed(2)}</Text>
                       </View>
                     </View>
                     {isSelected && (
@@ -905,12 +891,12 @@ export default function ExpenseDetailScreen() {
         animationType="slide"
         onRequestClose={() => setShowToWalletPicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select Destination Wallet</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Destination Wallet</Text>
               <TouchableOpacity 
-                style={styles.modalCloseButton}
+                className="p-2"
                 onPress={() => setShowToWalletPicker(false)}
               >
                 <Ionicons name="close" size={24} color={textColor} />
@@ -924,23 +910,21 @@ export default function ExpenseDetailScreen() {
                 const isSelected = toWalletId === w.id;
                 return (
                   <TouchableOpacity
-                    style={[
-                      styles.modalOptionItem,
-                      isSelected && { backgroundColor: tintColor + '15' },
-                    ]}
+                    className="flex-row items-center justify-between p-4 border-b border-gray-200"
+                    style={isSelected ? { backgroundColor: tintColor + '15' } : {}}
                     onPress={() => {
                       Haptics.selectionAsync();
                       setToWalletId(w.id);
                       setShowToWalletPicker(false);
                     }}
                   >
-                    <View style={styles.modalOptionLeft}>
-                      <View style={[styles.currencySymbolBadge, { backgroundColor: (w.color || tintColor) + '20' }]}>
-                        <Text style={styles.categoryBadgeIcon}>{w.icon || '💵'}</Text>
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-11 h-11 rounded-xl justify-center items-center" style={{ backgroundColor: (w.color || tintColor) + '20' }}>
+                        <Text className="text-lg">{w.icon || '💵'}</Text>
                       </View>
                       <View>
-                        <Text style={[styles.currencyCode, { color: textColor }]}>{w.name}</Text>
-                        <Text style={[styles.currencyName, { color: '#6b7280' }]}>৳{w.balance.toFixed(2)}</Text>
+                        <Text className="text-base font-semibold" style={{ color: textColor }}>{w.name}</Text>
+                        <Text className="text-[13px] text-gray-500">৳{w.balance.toFixed(2)}</Text>
                       </View>
                     </View>
                     {isSelected && (
@@ -961,12 +945,12 @@ export default function ExpenseDetailScreen() {
         animationType="slide"
         onRequestClose={() => setShowCategoryPicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: textColor }]}>Select Category</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+              <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Category</Text>
               <TouchableOpacity 
-                style={styles.modalCloseButton}
+                className="p-2"
                 onPress={() => setShowCategoryPicker(false)}
               >
                 <Ionicons name="close" size={24} color={textColor} />
@@ -977,15 +961,15 @@ export default function ExpenseDetailScreen() {
               keyExtractor={(item) => item.id || 'none'}
               showsVerticalScrollIndicator={false}
               numColumns={2}
-              columnWrapperStyle={styles.categoryGrid}
+              columnWrapperStyle={{ flexDirection: 'row', flexWrap: 'wrap', padding: 12, gap: 12 }}
               renderItem={({ item: cat }) => {
                 const isSelected = cat.id === '' ? !categoryId : categoryId === cat.id;
                 return (
                   <TouchableOpacity
+                    className={`w-[47%] p-4 rounded-2xl items-center border-2 ${isSelected ? 'border-solid' : 'border-transparent'}`}
                     style={[
-                      styles.categoryGridItem,
                       { backgroundColor: cardBg },
-                      isSelected && { borderColor: getHeaderColor(), borderWidth: 2 },
+                      isSelected && { borderColor: getHeaderColor() },
                     ]}
                     onPress={() => {
                       Haptics.selectionAsync();
@@ -993,15 +977,16 @@ export default function ExpenseDetailScreen() {
                       setShowCategoryPicker(false);
                     }}
                   >
-                    <Text style={styles.categoryGridIcon}>{cat.icon || '📦'}</Text>
+                    <Text className="text-4xl mb-2">{cat.icon || '📦'}</Text>
                     <Text 
-                      style={[styles.categoryGridName, { color: textColor }]} 
+                      className="text-sm font-medium text-center"
+                      style={{ color: textColor }} 
                       numberOfLines={1}
                     >
                       {cat.name}
                     </Text>
                     {isSelected && (
-                      <View style={[styles.categoryCheckmark, { backgroundColor: getHeaderColor() }]}>
+                      <View className="absolute top-2 right-2 w-[18px] h-[18px] rounded-full justify-center items-center" style={{ backgroundColor: getHeaderColor() }}>
                         <Ionicons name="checkmark" size={12} color="#fff" />
                       </View>
                     )}
@@ -1009,19 +994,20 @@ export default function ExpenseDetailScreen() {
                 );
               }}
               ListEmptyComponent={
-                <View style={styles.emptyCategories}>
+                <View className="p-8 items-center">
                   <Ionicons name="folder-open-outline" size={48} color="#9ca3af" />
-                  <Text style={[styles.emptyCategoriesText, { color: '#6b7280' }]}>
+                  <Text className="text-sm text-center mb-3 text-gray-500">
                     No categories of type {type.toLowerCase()} yet
                   </Text>
                   <TouchableOpacity
-                    style={[styles.createCategoryButton, { borderColor: tintColor }]}
+                    className="flex-row items-center justify-center p-4 m-3 rounded-xl border-2 border-dashed gap-2"
+                    style={{ borderColor: tintColor }}
                     onPress={() => {
                       setShowCategoryPicker(false);
                       router.push('/category/new');
                     }}
                   >
-                    <Text style={[styles.createCategoryButtonText, { color: tintColor }]}>Create Category</Text>
+                    <Text className="text-[15px] font-semibold" style={{ color: tintColor }}>Create Category</Text>
                   </TouchableOpacity>
                 </View>
               }
@@ -1032,474 +1018,3 @@ export default function ExpenseDetailScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  saveButton: {
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Segment Control
-  segmentContainer: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 20,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  segmentButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    paddingBottom: 34,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  modalOptionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  modalOptionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  currencySymbol: {
-    fontSize: 24,
-    width: 40,
-    textAlign: 'center',
-  },
-  currencyCode: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  currencyName: {
-    fontSize: 13,
-  },
-  emptyCategories: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptyCategoriesText: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  // Amount Card styles
-  amountCard: {
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  amountLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-    opacity: 0.7,
-  },
-  amountDisplay: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  amountSymbol: {
-    fontSize: 28,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  amountValue: {
-    fontSize: 48,
-    fontWeight: '700',
-  },
-  categoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 16,
-    gap: 8,
-  },
-  categoryBadgeIcon: {
-    fontSize: 18,
-  },
-  categoryBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  // Form Section styles
-  formSection: {
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 16,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  inputIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  inputWrapper: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-    opacity: 0.6,
-  },
-  inputField: {
-    fontSize: 16,
-    fontWeight: '500',
-    padding: 0,
-  },
-  amountInput: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  noteInput: {
-    fontSize: 15,
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  divider: {
-    height: 1,
-    marginLeft: 68,
-    backgroundColor: '#e5e7eb',
-  },
-  currencyButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  currencyButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  selectedCategoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  selectedCategoryIcon: {
-    fontSize: 20,
-  },
-  // Action Section styles
-  actionSection: {
-    marginTop: 8,
-    gap: 12,
-  },
-  saveButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  clearFormButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 14,
-    backgroundColor: '#f9fafb',
-    gap: 8,
-  },
-  clearFormButtonText: {
-    color: '#6b7280',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  deleteButtonOutline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#ef4444',
-    borderRadius: 14,
-    gap: 8,
-  },
-  deleteButtonOutlineText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Delete Modal styles
-  deleteOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  deleteModal: {
-    width: '100%',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  deleteIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  deleteModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  deleteModalMessage: {
-    fontSize: 15,
-    textAlign: 'center',
-    opacity: 0.7,
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  deleteModalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  deleteModalButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    borderWidth: 1,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  confirmDeleteButton: {
-    backgroundColor: '#ef4444',
-  },
-  confirmDeleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Modal Close Button
-  modalCloseButton: {
-    padding: 8,
-  },
-  // Currency Symbol Badge
-  currencySymbolBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Category Grid styles
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    gap: 12,
-  },
-  categoryGridItem: {
-    width: '47%',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  categoryGridIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  categoryGridName: {
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  categoryCheckmark: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  createCategoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    margin: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    gap: 8,
-  },
-  createCategoryButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  // Date Picker styles
-  quickDatesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 16,
-    gap: 10,
-  },
-  quickDateButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  quickDateText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  calendarContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  pickCalendarButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  pickCalendarText: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  datePickerWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: 'rgba(99, 102, 241, 0.05)',
-    borderRadius: 12,
-    padding: 12,
-    overflow: 'hidden',
-  },
-  selectedDateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    width: '100%',
-    justifyContent: 'center',
-  },
-  selectedDateText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  calendarHint: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  datePicker: {
-    width: '100%',
-    height: 150,
-  },
-  dateConfirmButton: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  dateConfirmButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
