@@ -1,3 +1,4 @@
+import { API_CONFIG } from '@/constants/api-config';
 import {
     AuthResponse,
     LoginCredentials,
@@ -5,18 +6,17 @@ import {
     UpdateProfileData,
     User,
 } from '@/types';
-import { axiosInstance, tokenManager } from './axios-instance';
-import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import { API_CONFIG } from '@/constants/api-config';
+import * as WebBrowser from 'expo-web-browser';
+import { axiosInstance, tokenManager } from './axios-instance';
 
 export const authApi = {
     async loginWithGoogle(): Promise<{ token?: string }> {
         const redirectUrl = Linking.createURL('/login');
         const authUrl = `${API_CONFIG.BASE_URL}/auth/google?redirectUrl=${encodeURIComponent(redirectUrl)}`;
-        
+
         const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-        
+
         if (result.type === 'success' && result.url) {
             const url = Linking.parse(result.url);
             const token = url.queryParams?.token;
@@ -24,7 +24,7 @@ export const authApi = {
                 return { token };
             }
         }
-        
+
         return {};
     },
 

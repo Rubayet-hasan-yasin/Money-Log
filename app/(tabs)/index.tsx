@@ -102,6 +102,12 @@ export default function DashboardScreen() {
   const top5Categories = getTop5Categories();
   const totalCategoryAmount = getTotalCategoryAmount();
 
+  console.log('summary', summary);
+  console.log('recentExpenses', recentExpenses);
+  console.log('monthlyTrends', monthlyTrends);
+  console.log('categoryAnalytics', categoryAnalytics);
+  console.log('wallets', wallets);
+
   return (
     <ScrollView
       className="flex-1"
@@ -112,19 +118,19 @@ export default function DashboardScreen() {
       }
     >
       {/* <DashboardHeader userName={user?.name} /> */}
-      
+
       <BalanceSummary summary={summary} walletsCount={wallets.length} />
-      
+
       <AccountsSlider wallets={wallets} />
-      
+
       <ExpenseTrendCard expenseTrend={expenseTrend} monthlyTrends={monthlyTrends} />
-      
+
       <TopCategories top5Categories={top5Categories} totalCategoryAmount={totalCategoryAmount} />
-      
+
       <CategoryBreakdown categoryAnalytics={categoryAnalytics} totalCategoryAmount={totalCategoryAmount} />
-      
+
       <MonthlyTrendsChart monthlyTrends={monthlyTrends} />
-      
+
       <RecentTransactions recentExpenses={recentExpenses} />
     </ScrollView>
   );

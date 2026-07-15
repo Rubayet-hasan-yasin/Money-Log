@@ -39,7 +39,7 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('Google Auth Error:', error);
-      Alert.alert('Login Failed', 'Unable to sign in with Google');
+      Alert.alert('Login Failed', String(error));
     } finally {
       setIsLoading(false);
     }
