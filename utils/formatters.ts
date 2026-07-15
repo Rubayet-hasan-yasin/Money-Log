@@ -1,3 +1,4 @@
+import { format as formatFns, formatDistanceToNow } from 'date-fns';
 import { CURRENCIES } from '@/types';
 
 /**
@@ -6,7 +7,7 @@ import { CURRENCIES } from '@/types';
 export function formatCurrency(amount: number, currencyCode = 'USD'): string {
   const currency = CURRENCIES.find(c => c.code === currencyCode);
   const symbol = currency?.symbol || '$';
-  
+
   return `${symbol}${amount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -18,24 +19,15 @@ export function formatCurrency(amount: number, currencyCode = 'USD'): string {
  */
 export function formatDate(dateString: string, format: 'short' | 'medium' | 'long' = 'medium'): string {
   const date = new Date(dateString);
-  
+
   switch (format) {
     case 'short':
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return formatFns(date, 'MMM d');
     case 'long':
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
+      return formatFns(date, 'EEEE, MMMM d, yyyy');
     case 'medium':
     default:
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
+      return formatFns(date, 'MMM d, yyyy');
   }
 }
 
@@ -43,51 +35,14 @@ export function formatDate(dateString: string, format: 'short' | 'medium' | 'lon
  * Format a date for input (YYYY-MM-DD)
  */
 export function formatDateForInput(date: Date = new Date()): string {
-  return date.toISOString().split('T')[0];
+  return formatFns(date, 'yyyy-MM-dd');
 }
 
 /**
  * Get relative time (e.g., "2 hours ago", "yesterday")
  */
 export function getRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
-  if (diffInSeconds < 60) {
-    return 'just now';
-  }
-  
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays === 1) {
-    return 'yesterday';
-  }
-  if (diffInDays < 7) {
-    return `${diffInDays} days ago`;
-  }
-  
-  if (diffInDays < 30) {
-    const weeks = Math.floor(diffInDays / 7);
-    return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) {
-    return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`;
-  }
-  
-  const diffInYears = Math.floor(diffInMonths / 12);
-  return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
+  return formatDistanceToNow(new Date(dateString), { addSuffix: true });
 }
 
 /**
@@ -111,7 +66,7 @@ export function calculatePercentage(value: number, total: number): number {
  */
 export function getMonthName(month: number, format: 'short' | 'long' = 'long'): string {
   const date = new Date(2000, month, 1);
-  return date.toLocaleString('en-US', { month: format });
+  return formatFns(date, format === 'short' ? 'MMM' : 'MMMM');
 }
 
 /**
@@ -127,7 +82,7 @@ export function getCurrentYear(): number {
 export function getMonthRange(year: number, month: number): { start: string; end: string } {
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
-  
+
   return {
     start: formatDateForInput(start),
     end: formatDateForInput(end),
@@ -235,15 +190,4 @@ export function calculateTrend(current: number, previous: number): { percentage:
   }
   const percentage = ((current - previous) / previous) * 100;
   return { percentage: Math.abs(percentage), isIncrease: percentage >= 0 };
-}
-
-/**
- * Format file size
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
