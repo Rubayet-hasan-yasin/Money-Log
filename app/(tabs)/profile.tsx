@@ -19,8 +19,6 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
@@ -37,31 +35,20 @@ export default function ProfileScreen() {
       return;
     }
 
-    if (password && password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
 
-    if (password && password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
 
     setIsLoading(true);
     try {
-      const updateData: { name?: string; email?: string; password?: string } = {};
+      const updateData: { name?: string; email?: string } = {};
       
       if (name !== user?.name) updateData.name = name.trim();
       if (email !== user?.email) updateData.email = email.trim();
-      if (password) updateData.password = password;
 
       if (Object.keys(updateData).length > 0) {
         await updateProfile(updateData);
       }
       
       setIsEditing(false);
-      setPassword('');
-      setConfirmPassword('');
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error) {
       Alert.alert(
@@ -76,8 +63,6 @@ export default function ProfileScreen() {
   const handleCancel = () => {
     setName(user?.name || '');
     setEmail(user?.email || '');
-    setPassword('');
-    setConfirmPassword('');
     setIsEditing(false);
   };
 
@@ -172,40 +157,6 @@ export default function ProfileScreen() {
               <Text className="text-base" style={{ color: textColor }}>{user?.email}</Text>
             )}
           </View>
-
-          {isEditing && (
-            <>
-              <View className="mb-4">
-                <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>
-                  New Password (optional)
-                </Text>
-                <TextInput
-                  className="border rounded-lg p-3 text-base"
-                  style={{ color: textColor, borderColor: '#e5e7eb' }}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Enter new password"
-                  placeholderTextColor="#9ca3af"
-                  secureTextEntry
-                />
-              </View>
-
-              <View className="mb-4">
-                <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>
-                  Confirm Password
-                </Text>
-                <TextInput
-                  className="border rounded-lg p-3 text-base"
-                  style={{ color: textColor, borderColor: '#e5e7eb' }}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Confirm new password"
-                  placeholderTextColor="#9ca3af"
-                  secureTextEntry
-                />
-              </View>
-            </>
-          )}
 
           <View className="mb-4">
             <Text className="text-[13px] font-medium mb-2 opacity-70" style={{ color: textColor }}>Member Since</Text>
