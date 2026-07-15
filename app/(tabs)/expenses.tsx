@@ -1,11 +1,14 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
-import { Category, CURRENCIES, Expense, ExpenseFilters, Wallet } from '@/types';
+import { Category, Expense, ExpenseFilters, Wallet } from '@/types';
 import { DateRangeType, exportToCSV, formatDate, getDateRange } from '@/utils/formatters';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageAccessFramework } from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { ExpenseListItem } from '@/components/expenses/expense-list-item';
+import { ExpenseFilterModal } from '@/components/expenses/expense-filter-modal';
+import { ExpenseHeader } from '@/components/expenses/expense-header';
 import {
     ActivityIndicator,
     Alert,
@@ -276,152 +279,23 @@ export default function ExpensesScreen() {
     }
   };
 
-  const formatCurrencyValue = (amount: number, currency = 'BDT') => {
-    const curr = CURRENCIES.find(c => c.code === currency);
-    return `${curr?.symbol || '৳'}${amount.toFixed(2)}`;
-  };
-
-  const formatDateValue = (dateString: string) => {
-    return formatDate(dateString, 'medium');
-  };
-
-  const getTransactionColor = (item: Expense) => {
-    if (item.type === 'INCOME') return '#22c55e';
-    if (item.type === 'TRANSFER') return '#64748b';
-    return '#ef4444'; // EXPENSE
-  };
-
-  const getTransactionPrefix = (item: Expense) => {
-    if (item.type === 'INCOME') return '+';
-    if (item.type === 'TRANSFER') return '⇄ ';
-    return '-'; // EXPENSE
-  };
-
-  const renderExpense = ({ item }: { item: Expense }) => (
-    <TouchableOpacity
-      className="flex-row justify-between items-center p-4 border rounded-xl mb-3"
-      style={[
-        { borderColor: selectedExpenses.includes(item.id) ? tintColor : '#e5e7eb' },
-        selectedExpenses.includes(item.id) && { backgroundColor: tintColor + '10' }
-      ]}
-      onPress={() => {
-        if (isSelectionMode) {
-          toggleExpenseSelection(item.id);
-        } else {
-          router.push(`/expense/${item.id}` as any);
-        }
-      }}
-      onLongPress={() => {
-        if (!isSelectionMode) {
-          setIsSelectionMode(true);
-          setSelectedExpenses([item.id]);
-        }
-      }}
-    >
-      {isSelectionMode && (
-        <View 
-          className="w-[22px] h-[22px] rounded border-2 mr-3 justify-center items-center"
-          style={[
-            { borderColor: '#9ca3af' },
-            selectedExpenses.includes(item.id) && { backgroundColor: tintColor, borderColor: tintColor }
-          ]}
-        >
-          {selectedExpenses.includes(item.id) && (
-            <Ionicons name="checkmark" size={14} color="#fff" />
-          )}
-        </View>
-      )}
-      <View className="flex-row items-center flex-1">
-        <View
-          className="w-11 h-11 rounded-xl justify-center items-center mr-3"
-          style={{ 
-              backgroundColor: item.type === 'TRANSFER' 
-                ? '#64748b' 
-                : (item.type === 'INCOME' ? '#22c55e' : (item.category?.color || '#ef4444'))
-          }}
-        >
-          <Text className="text-xl">
-            {item.type === 'TRANSFER' ? '⇄' : (item.category?.icon || (item.type === 'INCOME' ? '💵' : '📋'))}
-          </Text>
-        </View>
-        <View className="flex-1">
-          <Text className="text-base font-semibold mb-1" style={{ color: textColor }}>
-            {item.title}
-          </Text>
-          <Text className="text-[13px]" style={{ color: textColor, opacity: 0.6 }}>
-            {item.type === 'TRANSFER'
-              ? `${item.wallet?.name || 'Source'} ➔ ${item.toWallet?.name || 'Dest'}`
-              : `${item.category?.name || 'No Category'} • ${item.wallet?.name || 'Cash'}`
-            } • {formatDateValue(item.date)}
-          </Text>
-          {item.description && (
-            <Text
-              className="text-xs mt-0.5"
-              style={{ color: textColor, opacity: 0.5 }}
-              numberOfLines={1}
-            >
-              {item.description}
-            </Text>
-          )}
-        </View>
-      </View>
-      <Text className="text-base font-bold" style={{ color: getTransactionColor(item) }}>
-        {getTransactionPrefix(item)}{formatCurrencyValue(item.amount, item.currency)}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  if (isLoading && expenses.length === 0) {
-    return (
-      <View className="flex-1 justify-center items-center" style={{ backgroundColor }}>
-        <ActivityIndicator size="large" color={tintColor} />
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1" style={{ backgroundColor }}>
-      {/* Header with actions */}
-      {isSelectionMode ? (
-        <View className="flex-row justify-between items-center px-4 py-3 shrink-0" style={{ backgroundColor: tintColor }}>
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => { setIsSelectionMode(false); setSelectedExpenses([]); }}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text className="text-white text-base font-semibold">{selectedExpenses.length} selected</Text>
-          </View>
-          <View className="flex-row gap-4">
-            <TouchableOpacity onPress={toggleSelectAll} className="p-1">
-              <Ionicons name={selectedExpenses.length === expenses.length ? "checkbox" : "square-outline"} size={22} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleExportCSV} className="p-1">
-              <Ionicons name="download-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleBulkDelete} className="p-1">
-              <Ionicons name="trash-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <View className="flex-row justify-end px-4 pt-3 gap-3 shrink-0">
-          <TouchableOpacity 
-            className="flex-row items-center px-3 py-2 rounded-lg border gap-1.5"
-            style={{ borderColor: '#e5e7eb' }}
-            onPress={() => setShowFilters(true)}
-          >
-            <Ionicons name="filter" size={18} color={textColor} />
-            <Text className="text-sm font-medium" style={{ color: textColor }}>Filters</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className="flex-row items-center px-3 py-2 rounded-lg border gap-1.5"
-            style={{ borderColor: '#e5e7eb' }}
-            onPress={handleExportCSV}
-          >
-            <Ionicons name="download-outline" size={18} color={textColor} />
-            <Text className="text-sm font-medium" style={{ color: textColor }}>Export</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <ExpenseHeader
+        isSelectionMode={isSelectionMode}
+        selectedCount={selectedExpenses.length}
+        totalCount={expenses.length}
+        tintColor={tintColor}
+        textColor={textColor}
+        onCloseSelection={() => {
+          setIsSelectionMode(false);
+          setSelectedExpenses([]);
+        }}
+        onToggleSelectAll={toggleSelectAll}
+        onExport={handleExportCSV}
+        onBulkDelete={handleBulkDelete}
+        onShowFilters={() => setShowFilters(true)}
+      />
 
       {/* Date Filter Pills */}
       <ScrollView 
@@ -475,7 +349,22 @@ export default function ExpensesScreen() {
       <View className="flex-1">
         <FlatList
           data={expenses}
-          renderItem={renderExpense}
+          renderItem={({ item }) => (
+            <ExpenseListItem
+              item={item}
+              isSelectionMode={isSelectionMode}
+              isSelected={selectedExpenses.includes(item.id)}
+              tintColor={tintColor}
+              textColor={textColor}
+              onToggleSelection={toggleExpenseSelection}
+              onLongPress={() => {
+                if (!isSelectionMode) {
+                  setIsSelectionMode(true);
+                  setSelectedExpenses([item.id]);
+                }
+              }}
+            />
+          )}
           keyExtractor={item => item.id}
           contentContainerStyle={{ padding: 16, paddingTop: 8 }}
           refreshControl={
@@ -514,206 +403,26 @@ export default function ExpensesScreen() {
       )}
 
       {/* Filter Modal */}
-      <Modal
+      <ExpenseFilterModal
         visible={showFilters}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowFilters(false)}
-      >
-        <View className="flex-1" style={{ backgroundColor }}>
-          <View className="flex-row justify-between items-center p-4 border-b" style={{ borderColor: '#e5e7eb' }}>
-            <Text className="text-xl font-bold" style={{ color: textColor }}>Filters & Sorting</Text>
-            <TouchableOpacity onPress={() => setShowFilters(false)}>
-              <Ionicons name="close" size={24} color={textColor} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView className="flex-1 p-4">
-            {/* Transaction Type Filter */}
-            <View className="mb-6">
-              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Transaction Type</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {[
-                  { label: 'All', value: '' },
-                  { label: 'Expense', value: 'EXPENSE' },
-                  { label: 'Income', value: 'INCOME' },
-                  { label: 'Transfer', value: 'TRANSFER' }
-                ].map(opt => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
-                    style={[
-                      selectedType === opt.value && { backgroundColor: tintColor },
-                      selectedType !== opt.value && { borderColor: '#e5e7eb', borderWidth: 1 },
-                    ]}
-                    onPress={() => {
-                      setSelectedType(opt.value);
-                      setSelectedCategory(''); // Reset category filter since category types vary
-                    }}
-                  >
-                    <Text className="text-sm font-medium" style={[selectedType === opt.value ? { color: '#fff' } : { color: textColor }]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Wallet Filter */}
-            <View className="mb-6">
-              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Wallet / Account</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
-                  style={[
-                    !selectedWallet && { backgroundColor: tintColor },
-                    selectedWallet && { borderColor: '#e5e7eb', borderWidth: 1 },
-                  ]}
-                  onPress={() => setSelectedWallet('')}
-                >
-                  <Text className="text-sm font-medium" style={[!selectedWallet ? { color: '#fff' } : { color: textColor }]}>
-                    All
-                  </Text>
-                </TouchableOpacity>
-                {wallets.map(w => (
-                  <TouchableOpacity
-                    key={w.id}
-                    className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
-                    style={[
-                      selectedWallet === w.id && { backgroundColor: tintColor },
-                      selectedWallet !== w.id && { borderColor: '#e5e7eb', borderWidth: 1 },
-                    ]}
-                    onPress={() => setSelectedWallet(w.id)}
-                  >
-                    <Text className="text-base mr-1.5">{w.icon || '💵'}</Text>
-                    <Text className="text-sm font-medium" style={[selectedWallet === w.id ? { color: '#fff' } : { color: textColor }]}>
-                      {w.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Category Filter */}
-            {selectedType !== 'TRANSFER' && (
-              <View className="mb-6">
-                <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Category</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                  <TouchableOpacity
-                    className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
-                    style={[
-                      !selectedCategory && { backgroundColor: tintColor },
-                      selectedCategory && { borderColor: '#e5e7eb', borderWidth: 1 },
-                    ]}
-                    onPress={() => setSelectedCategory('')}
-                  >
-                    <Text className="text-sm font-medium" style={[!selectedCategory ? { color: '#fff' } : { color: textColor }]}>
-                      All
-                    </Text>
-                  </TouchableOpacity>
-                  {categories
-                    .filter(cat => !selectedType || cat.type === selectedType)
-                    .map(cat => (
-                      <TouchableOpacity
-                        key={cat.id}
-                        className="flex-row items-center px-4 py-2.5 rounded-[20px] mr-2"
-                        style={[
-                          selectedCategory === cat.id && { backgroundColor: tintColor },
-                          selectedCategory !== cat.id && { borderColor: '#e5e7eb', borderWidth: 1 },
-                        ]}
-                        onPress={() => setSelectedCategory(cat.id)}
-                      >
-                        <Text className="text-base mr-1.5">{cat.icon || '📦'}</Text>
-                        <Text className="text-sm font-medium" style={[selectedCategory === cat.id ? { color: '#fff' } : { color: textColor }]}>
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Sort By */}
-            <View className="mb-6">
-              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Sort By</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {(['date', 'amount', 'category'] as SortOption[]).map(option => (
-                  <TouchableOpacity
-                    key={option}
-                    className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
-                    style={[
-                      sortBy === option && { backgroundColor: tintColor },
-                      sortBy !== option && { borderColor: '#e5e7eb', borderWidth: 1 },
-                    ]}
-                    onPress={() => setSortBy(option)}
-                  >
-                    <Text className="text-sm font-medium" style={[sortBy === option ? { color: '#fff' } : { color: textColor }]}>
-                      {option.charAt(0).toUpperCase() + option.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Sort Order */}
-            <View className="mb-6">
-              <Text className="text-base font-semibold mb-3" style={{ color: textColor }}>Order</Text>
-              <View className="flex-row flex-wrap gap-2">
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
-                  style={[
-                    sortOrder === 'desc' && { backgroundColor: tintColor },
-                    sortOrder !== 'desc' && { borderColor: '#e5e7eb', borderWidth: 1 },
-                  ]}
-                  onPress={() => setSortOrder('desc')}
-                >
-                  <Ionicons name="arrow-down" size={16} color={sortOrder === 'desc' ? '#fff' : textColor} />
-                  <Text className="text-sm font-medium" style={[sortOrder === 'desc' ? { color: '#fff' } : { color: textColor }]}>
-                    Descending
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-2.5 rounded-xl gap-1.5"
-                  style={[
-                    sortOrder === 'asc' && { backgroundColor: tintColor },
-                    sortOrder !== 'asc' && { borderColor: '#e5e7eb', borderWidth: 1 },
-                  ]}
-                  onPress={() => setSortOrder('asc')}
-                >
-                  <Ionicons name="arrow-up" size={16} color={sortOrder === 'asc' ? '#fff' : textColor} />
-                  <Text className="text-sm font-medium" style={[sortOrder === 'asc' ? { color: '#fff' } : { color: textColor }]}>
-                    Ascending
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ScrollView>
-
-          <View className="flex-row p-4 border-t gap-3" style={{ borderColor: '#e5e7eb' }}>
-            <TouchableOpacity
-              className="flex-1 p-4 rounded-xl border items-center"
-              style={{ borderColor: '#e5e7eb' }}
-              onPress={() => {
-                setSelectedCategory('');
-                setSelectedType('');
-                setSelectedWallet('');
-                setSortBy('date');
-                setSortOrder('desc');
-                setSelectedDateFilter('all');
-              }}
-            >
-              <Text className="text-base font-semibold" style={{ color: textColor }}>Reset</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-[2] p-4 rounded-xl items-center"
-              style={{ backgroundColor: tintColor }}
-              onPress={() => setShowFilters(false)}
-            >
-              <Text className="text-white text-base font-semibold">Apply Filters</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowFilters(false)}
+        backgroundColor={backgroundColor}
+        textColor={textColor}
+        tintColor={tintColor}
+        categories={categories}
+        wallets={wallets}
+        selectedType={selectedType}
+        setSelectedType={setSelectedType}
+        selectedWallet={selectedWallet}
+        setSelectedWallet={setSelectedWallet}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        setSelectedDateFilter={setSelectedDateFilter}
+      />
     </View>
   );
 }
