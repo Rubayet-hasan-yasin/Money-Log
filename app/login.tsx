@@ -2,10 +2,9 @@ import { AntDesign } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/auth-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { router } from 'expo-router';
-import { API_CONFIG } from '@/constants/api-config';
+import { api } from '@/services/api';
 import React, { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 
 import {
     ActivityIndicator,
@@ -30,26 +29,13 @@ export default function LoginScreen() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      // 1. Generate the deep link for this Expo app
-      const redirectUrl = Linking.createURL('/login');
+      const { token } = await api.loginWithGoogle();
       
-      // 2. Use the base URL from environment config
-      const authUrl = `${API_CONFIG.BASE_URL}/auth/google?redirectUrl=${encodeURIComponent(redirectUrl)}`;
-
-      // 3. Open browser for Google Auth
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-
-      // 4. Handle successful return
-      if (result.type === 'success' && result.url) {
-        const url = Linking.parse(result.url);
-        const token = url.queryParams?.token;
-        
-        if (typeof token === 'string') {
-           await loginWithToken(token);
-           router.replace('/(tabs)');
-        } else {
-           Alert.alert('Login Failed', 'Authentication token was not received.');
-        }
+      if (token) {
+        await loginWithToken(token);
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Login Failed', 'Authentication token was not received.');
       }
     } catch (error) {
       console.error('Google Auth Error:', error);
