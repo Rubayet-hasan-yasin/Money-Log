@@ -135,10 +135,11 @@ export interface ExpenseFilters {
 
 // Dashboard types
 export interface DashboardSummary {
-  totalAmount: number;
-  totalCount: number;
-  averageExpense: number;
+  totalExpenses: number;
   totalIncome: number;
+  totalBalance: number;
+  averageExpense: number;
+  averageIncome: number;
   netBalance: number;
   categoryBreakdown: Record<'EXPENSE' | 'INCOME', Record<string, number>>;
 }

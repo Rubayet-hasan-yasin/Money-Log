@@ -22,7 +22,7 @@ export default function BalanceSummary({ summary, walletsCount }: BalanceSummary
       <View className="p-6 rounded-2xl" style={{ backgroundColor: '#1e293b' }}>
         <Text className="text-white/80 text-sm mb-2">Total Net Balance</Text>
         <Text className="text-white text-4xl font-bold mb-1">
-          {formatCurrency(summary?.netBalance || 0)}
+          {formatCurrency(summary?.totalBalance || 0)}
         </Text>
         <Text className="text-white/80 text-sm">
           Across {walletsCount} account{walletsCount !== 1 ? 's' : ''}
@@ -46,7 +46,7 @@ export default function BalanceSummary({ summary, walletsCount }: BalanceSummary
             <Text className="text-white/80 text-xs">Expenses</Text>
           </View>
           <Text className="text-white text-lg font-bold">
-            {formatCurrency(summary?.totalAmount || 0)}
+            {formatCurrency(summary?.totalExpenses || 0)}
           </Text>
         </View>
       </View>

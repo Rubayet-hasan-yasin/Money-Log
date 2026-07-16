@@ -117,6 +117,7 @@ export default function CategoriesScreen() {
     );
   }
 
+
   return (
     <View className="flex-1" style={{ backgroundColor }}>
       {/* Category Type Tabs */}

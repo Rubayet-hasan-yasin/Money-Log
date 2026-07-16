@@ -102,12 +102,6 @@ export default function DashboardScreen() {
   const top5Categories = getTop5Categories();
   const totalCategoryAmount = getTotalCategoryAmount();
 
-  console.log('summary', summary);
-  console.log('recentExpenses', recentExpenses);
-  console.log('monthlyTrends', monthlyTrends);
-  console.log('categoryAnalytics', categoryAnalytics);
-  console.log('wallets', wallets);
-
   return (
     <ScrollView
       className="flex-1"
