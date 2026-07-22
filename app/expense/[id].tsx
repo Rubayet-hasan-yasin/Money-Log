@@ -24,11 +24,6 @@ import {
     View,
 } from 'react-native';
 
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 const QUICK_DATES = [
   { label: 'Today', days: 0 },
   { label: 'Yesterday', days: 1 },
