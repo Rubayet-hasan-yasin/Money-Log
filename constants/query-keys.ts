@@ -3,5 +3,15 @@ export const QUERY_KEYS = {
         users: ['users'] as const,
         profile: ['profile'] as const,
     },
-    // Add other domain query keys here as the application grows
+    expenses: {
+        all: ['expenses'] as const,
+        list: (filters: any) => ['expenses', 'list', filters] as const,
+        details: (id: string) => ['expenses', 'detail', id] as const,
+    },
+    categories: {
+        all: ['categories'] as const,
+    },
+    wallets: {
+        all: ['wallets'] as const,
+    },
 };

@@ -1,11 +1,15 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
 import { Category, Expense, ExpenseFilters, Wallet } from '@/types';
-import { DateRangeType, exportToCSV, formatDate, getDateRange } from '@/utils/formatters';
+import { DateRangeType, exportToCSV, formatDate, getDateRange, formatDateForInput } from '@/utils/formatters';
+import { DATE_FILTERS } from '@/constants/enums';
 import { Ionicons } from '@expo/vector-icons';
 import { StorageAccessFramework } from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/constants/query-keys';
 import { ExpenseListItem } from '@/components/expenses/expense-list-item';
 import { ExpenseFilterModal } from '@/components/expenses/expense-filter-modal';
 import { ExpenseHeader } from '@/components/expenses/expense-header';
@@ -25,27 +29,16 @@ import {
 type SortOption = 'date' | 'amount' | 'category';
 type SortOrder = 'asc' | 'desc';
 
-const DATE_FILTERS: { label: string; value: DateRangeType }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Today', value: 'today' },
-  { label: 'Week', value: 'week' },
-  { label: 'Month', value: 'month' },
-  { label: 'Last Month', value: 'lastMonth' },
-  { label: 'Year', value: 'year' },
-];
-
 export default function ExpensesScreen() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Custom date picker states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState<Date | null>(null);
+  
   // New filter states
-  const [selectedDateFilter, setSelectedDateFilter] = useState<DateRangeType>('all');
+  const [selectedDateFilter, setSelectedDateFilter] = useState<DateRangeType | 'custom'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedWallet, setSelectedWallet] = useState<string>('');
@@ -67,10 +60,16 @@ export default function ExpensesScreen() {
       sortOrder,
     };
     
-    const dateRange = getDateRange(selectedDateFilter);
-    if (dateRange) {
-      filters.startDate = dateRange.startDate;
-      filters.endDate = dateRange.endDate;
+    if (selectedDateFilter === 'custom' && customDate) {
+      const dateStr = formatDateForInput(customDate);
+      filters.startDate = dateStr;
+      filters.endDate = dateStr;
+    } else if (selectedDateFilter !== 'custom') {
+      const dateRange = getDateRange(selectedDateFilter as DateRangeType);
+      if (dateRange) {
+        filters.startDate = dateRange.startDate;
+        filters.endDate = dateRange.endDate;
+      }
     }
     
     if (selectedCategory) {
@@ -90,77 +89,67 @@ export default function ExpensesScreen() {
     }
     
     return filters;
-  }, [selectedDateFilter, selectedCategory, selectedType, selectedWallet, sortBy, sortOrder, searchQuery]);
+  }, [selectedDateFilter, customDate, selectedCategory, selectedType, selectedWallet, sortBy, sortOrder, searchQuery]);
 
-  const fetchExpenses = async (pageNum = 1, refresh = false) => {
-    try {
-      const filters = buildFilters();
-      const response = await api.getExpenses({ ...filters, page: pageNum, limit: 20 });
-      
-      if (response.expenses) {
-        if (refresh || pageNum === 1) {
-          setExpenses(response.expenses);
-        } else {
-          setExpenses(prev => [...prev, ...response.expenses]);
-        }
-        setHasMore(response.pagination.page < response.pagination.pages);
-        setPage(pageNum);
-      }
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+  const filters = useMemo(() => buildFilters(), [buildFilters]);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await api.getCategories(1, 100);
-      if (response.categories) {
-        setCategories(response.categories);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
+  const { data: categoriesResponse } = useQuery({
+    queryKey: QUERY_KEYS.categories.all,
+    queryFn: () => api.getCategories(1, 100),
+  });
+  const categories = categoriesResponse?.categories || [];
 
-  const fetchWallets = async () => {
-    try {
-      const response = await api.getWallets();
-      if (response.wallets) {
-        setWallets(response.wallets);
+  const { data: walletsResponse } = useQuery({
+    queryKey: QUERY_KEYS.wallets.all,
+    queryFn: () => api.getWallets(),
+  });
+  const wallets = walletsResponse?.wallets || [];
+
+  const {
+    data: expensesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isExpensesLoading,
+    refetch: refetchExpenses,
+    isRefetching
+  } = useInfiniteQuery({
+    queryKey: QUERY_KEYS.expenses.list(filters),
+    queryFn: ({ pageParam = 1 }) => api.getExpenses({ ...filters, page: pageParam, limit: 20 }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.pages) {
+        return lastPage.pagination.page + 1;
       }
-    } catch (error) {
-      console.error('Error fetching wallets:', error);
-    }
-  };
+      return undefined;
+    },
+    initialPageParam: 1,
+  });
+
+  const expenses = useMemo(() => expensesData?.pages.flatMap(page => page.expenses) || [], [expensesData]);
+  const isLoading = isExpensesLoading;
+  const isRefreshing = isRefetching && !isFetchingNextPage;
 
   useFocusEffect(
     useCallback(() => {
-      fetchExpenses(1, true);
-      fetchCategories();
-      fetchWallets();
+      refetchExpenses();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDateFilter, selectedCategory, selectedType, selectedWallet, sortBy, sortOrder])
+    }, [refetchExpenses])
   );
 
   const onRefresh = () => {
-    setIsRefreshing(true);
     setSelectedExpenses([]);
     setIsSelectionMode(false);
-    fetchExpenses(1, true);
+    refetchExpenses();
   };
 
   const loadMore = () => {
-    if (hasMore && !isLoading) {
-      fetchExpenses(page + 1);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
   };
 
   const handleSearch = () => {
-    setIsLoading(true);
-    fetchExpenses(1, true);
+    // React Query handles this automatically via the filters dependency
   };
 
   // Bulk delete functionality
@@ -182,7 +171,7 @@ export default function ExpensesScreen() {
               } catch {
                 await Promise.all(selectedExpenses.map(id => api.deleteExpense(id)));
               }
-              setExpenses(prev => prev.filter(e => !selectedExpenses.includes(e.id)));
+              refetchExpenses();
               setSelectedExpenses([]);
               setIsSelectionMode(false);
               Alert.alert('Success', `${selectedExpenses.length} transaction(s) deleted`);
@@ -321,7 +310,38 @@ export default function ExpensesScreen() {
             </Text>
           </TouchableOpacity>
         ))}
+        <TouchableOpacity
+          key="custom"
+          className="flex-row px-4 rounded-full mr-2 h-9 justify-center items-center gap-1.5"
+          style={[
+            selectedDateFilter === 'custom' && { backgroundColor: tintColor },
+            selectedDateFilter !== 'custom' && { borderColor: '#e5e7eb', borderWidth: 1 },
+          ]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Ionicons name="calendar-outline" size={16} color={selectedDateFilter === 'custom' ? '#fff' : textColor} />
+          <Text className="text-sm font-medium" style={[
+            selectedDateFilter === 'custom' ? { color: '#fff' } : { color: textColor },
+          ]}>
+            {customDate && selectedDateFilter === 'custom' ? formatDate(customDate.toISOString(), 'short') : 'Specific Date'}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={customDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (event.type === 'set' && selectedDate) {
+              setCustomDate(selectedDate);
+              setSelectedDateFilter('custom');
+            }
+          }}
+        />
+      )}
 
       {/* Search Bar */}
       <View className="px-4 pb-2 pt-2 shrink-0">
@@ -373,7 +393,7 @@ export default function ExpensesScreen() {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
-            hasMore && !isLoading ? (
+            isFetchingNextPage ? (
               <ActivityIndicator className="py-5" color={tintColor} />
             ) : null
           }
