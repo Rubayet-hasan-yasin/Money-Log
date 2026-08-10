@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 import "../global.css"
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/query-client';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -46,47 +48,47 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="expense/[id]" 
-          options={{ 
+        <Stack.Screen
+          name="expense/[id]"
+          options={{
             title: 'Expense Details',
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="expense/new" 
-          options={{ 
+        <Stack.Screen
+          name="expense/new"
+          options={{
             title: 'Add Expense',
             presentation: 'modal',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="category/[id]" 
-          options={{ 
+        <Stack.Screen
+          name="category/[id]"
+          options={{
             title: 'Category Details',
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="category/new" 
-          options={{ 
+        <Stack.Screen
+          name="category/new"
+          options={{
             title: 'Add Category',
             presentation: 'modal',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="wallet/[id]" 
-          options={{ 
+        <Stack.Screen
+          name="wallet/[id]"
+          options={{
             title: 'Account Details',
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="wallet/new" 
-          options={{ 
+        <Stack.Screen
+          name="wallet/new"
+          options={{
             title: 'Add Account / Wallet',
             presentation: 'modal',
-          }} 
+          }}
         />
       </Stack>
       <StatusBar style="auto" />
@@ -96,8 +98,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

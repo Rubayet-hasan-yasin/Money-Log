@@ -4,6 +4,9 @@ import { useFocusEffect } from 'expo-router';
 // import { useAuth } from '@/contexts/auth-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
+import { getUsers } from '@/services/api/auth.api';
+import { useQuery } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/constants/query-keys';
 import { CategoryAnalytics, DashboardSummary, Expense, MonthlyTrend, Wallet } from '@/types';
 import { calculateTrend } from '@/utils/formatters';
 
@@ -17,8 +20,15 @@ import CategoryBreakdown from '@/components/dashboard/CategoryBreakdown';
 import MonthlyTrendsChart from '@/components/dashboard/MonthlyTrendsChart';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
+  // Query auth users data using React Query queryFn
+  const { data: users, isPending: isUsersPending, error: usersError, refetch: refetchUsers } = useQuery({
+    queryKey: QUERY_KEYS.auth.users,
+    queryFn: getUsers,
+  });
+
   // const { user } = useAuth();
+
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
@@ -67,6 +77,7 @@ export default function DashboardScreen() {
 
   const onRefresh = () => {
     setIsRefreshing(true);
+    refetchUsers();
     fetchDashboardData();
   };
 
