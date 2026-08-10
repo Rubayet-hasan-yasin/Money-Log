@@ -4,6 +4,8 @@ import { Category } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/constants/query-keys';
 import {
     ActivityIndicator,
     Alert,
@@ -16,9 +18,7 @@ import {
 } from 'react-native';
 
 export default function CategoriesScreen() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
 
   const backgroundColor = useThemeColor({}, 'background');
@@ -26,30 +26,37 @@ export default function CategoriesScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
-  const fetchCategories = async () => {
-    try {
-      const response = await api.getCategories(1, 100);
-      if (response.categories) {
-        setCategories(response.categories);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+  const {
+    data: categoriesResponse,
+    isLoading,
+    isRefetching,
+    refetch
+  } = useQuery({
+    queryKey: QUERY_KEYS.categories.all,
+    queryFn: () => api.getCategories(1, 100),
+  });
+
+  const categories = categoriesResponse?.categories || [];
 
   useFocusEffect(
     useCallback(() => {
-      fetchCategories();
-    }, [])
+      refetch();
+    }, [refetch])
   );
 
   const onRefresh = () => {
-    setIsRefreshing(true);
-    fetchCategories();
+    refetch();
   };
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: string) => api.deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categories.all });
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to delete category');
+    },
+  });
 
   const handleDelete = (category: Category) => {
     Alert.alert(
@@ -60,14 +67,7 @@ export default function CategoriesScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.deleteCategory(category.id);
-              setCategories(prev => prev.filter(c => c.id !== category.id));
-            } catch {
-              Alert.alert('Error', 'Failed to delete category');
-            }
-          },
+          onPress: () => deleteCategoryMutation.mutate(category.id),
         },
       ]
     );
@@ -147,7 +147,7 @@ export default function CategoriesScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={{ padding: 16, paddingTop: 8 }}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
           <View className="items-center pt-[60px] px-10">
