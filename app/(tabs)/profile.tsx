@@ -13,10 +13,11 @@ import {
     View,
 } from 'react-native';
 
+import { useMutation } from '@tanstack/react-query';
+
 export default function ProfileScreen() {
   const { user, updateProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
 
@@ -24,7 +25,23 @@ export default function ProfileScreen() {
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
 
-  const handleSave = async () => {
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name?: string; email?: string }) => {
+      return updateProfile(data);
+    },
+    onSuccess: () => {
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully');
+    },
+    onError: (error) => {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to update profile'
+      );
+    },
+  });
+
+  const handleSave = () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Name is required');
       return;
@@ -35,28 +52,15 @@ export default function ProfileScreen() {
       return;
     }
 
+    const updateData: { name?: string; email?: string } = {};
+    
+    if (name !== user?.name) updateData.name = name.trim();
+    if (email !== user?.email) updateData.email = email.trim();
 
-
-    setIsLoading(true);
-    try {
-      const updateData: { name?: string; email?: string } = {};
-      
-      if (name !== user?.name) updateData.name = name.trim();
-      if (email !== user?.email) updateData.email = email.trim();
-
-      if (Object.keys(updateData).length > 0) {
-        await updateProfile(updateData);
-      }
-      
+    if (Object.keys(updateData).length > 0) {
+      updateProfileMutation.mutate(updateData);
+    } else {
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to update profile'
-      );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -178,9 +182,9 @@ export default function ProfileScreen() {
               className="flex-1 p-3.5 rounded-lg items-center"
               style={{ backgroundColor: tintColor }}
               onPress={handleSave}
-              disabled={isLoading}
+              disabled={updateProfileMutation.isPending}
             >
-              {isLoading ? (
+              {updateProfileMutation.isPending ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text className="text-white text-sm font-semibold">Save Changes</Text>
