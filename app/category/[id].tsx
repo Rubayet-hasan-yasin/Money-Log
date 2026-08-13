@@ -2,8 +2,9 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     ActivityIndicator,
     Alert,
@@ -21,8 +22,8 @@ export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = !id || id === 'new';
 
-  const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
@@ -37,31 +38,70 @@ export default function CategoryDetailScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
-  const fetchCategory = useCallback(async () => {
-    if (isNew || !id) return;
-
-    try {
+  const { data: categoryData, isLoading: isQueryLoading } = useQuery({
+    queryKey: ['category', id],
+    queryFn: async () => {
       const response = await api.getCategory(id);
-      if (response.category) {
-        const cat = response.category;
-        setName(cat.name);
-        setIcon(cat.icon || '📦');
-        setColor(cat.color || '#3b82f6');
-        setType(cat.type || 'EXPENSE');
-      }
-    } catch (error) {
-      console.error('Error fetching category:', error);
-      Alert.alert('Error', 'Failed to load category');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id, isNew]);
+      return response;
+    },
+    enabled: !isNew && !!id,
+  });
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchCategory();
-    }, [fetchCategory])
-  );
+  useEffect(() => {
+    if (categoryData?.category) {
+      const cat = categoryData.category;
+      setName(cat.name);
+      setIcon(cat.icon || '📦');
+      setColor(cat.color || '#3b82f6');
+      setType(cat.type || 'EXPENSE');
+    }
+  }, [categoryData]);
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string; icon: string; color: string; type: 'EXPENSE' | 'INCOME' }) => {
+      return api.createCategory(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      router.back();
+    },
+    onError: (error) => {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to create category'
+      );
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: { name: string; icon: string; color: string; type: 'EXPENSE' | 'INCOME' }) => {
+      return api.updateCategory(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['category', id] });
+      router.back();
+    },
+    onError: (error) => {
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to update category'
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return api.deleteCategory(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      router.back();
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to delete category');
+    },
+  });
 
   const validate = () => {
     if (!name.trim()) {
@@ -71,32 +111,20 @@ export default function CategoryDetailScreen() {
     return true;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validate()) return;
 
-    setIsSaving(true);
-    try {
-      const categoryData = {
-        name: name.trim(),
-        icon,
-        color,
-        type,
-      };
+    const payload = {
+      name: name.trim(),
+      icon,
+      color,
+      type,
+    };
 
-      if (isNew) {
-        await api.createCategory(categoryData);
-      } else if (id) {
-        await api.updateCategory(id, categoryData);
-      }
-
-      router.back();
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to save category'
-      );
-    } finally {
-      setIsSaving(false);
+    if (isNew) {
+      createMutation.mutate(payload);
+    } else if (id) {
+      updateMutation.mutate(payload);
     }
   };
 
@@ -109,20 +137,16 @@ export default function CategoryDetailScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              if (id) {
-                await api.deleteCategory(id);
-                router.back();
-              }
-            } catch {
-              Alert.alert('Error', 'Failed to delete category');
-            }
+          onPress: () => {
+            deleteMutation.mutate();
           },
         },
       ]
     );
   };
+
+  const isLoading = isQueryLoading;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   if (isLoading) {
     return (

@@ -4,8 +4,9 @@ import { Category, CURRENCIES, Wallet } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     ActivityIndicator,
     Alert,
@@ -54,12 +55,70 @@ const formatDisplayDate = (dateStr: string) => {
 export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = !id || id === 'new';
+  const queryClient = useQueryClient();
   
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { data: categoriesRes } = useQuery({
+    queryKey: ['categories', 1, 100],
+    queryFn: () => api.getCategories(1, 100),
+  });
+  
+  const { data: walletsRes } = useQuery({
+    queryKey: ['wallets'],
+    queryFn: () => api.getWallets(),
+  });
+  
+  const { data: expenseRes, isLoading: isExpenseLoading } = useQuery({
+    queryKey: ['expense', id],
+    queryFn: () => api.getExpense(id),
+    enabled: !isNew && !!id,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => api.createExpense(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    },
+    onError: (error) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create transaction');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => api.updateExpense(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expense', id] });
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    },
+    onError: (error) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update transaction');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.deleteExpense(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    },
+    onError: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', 'Failed to delete transaction');
+    },
+  });
+
+  const categories = categoriesRes?.categories || [];
+  const wallets = walletsRes?.wallets || [];
+
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showWalletPicker, setShowWalletPicker] = useState(false);
@@ -85,56 +144,37 @@ export default function ExpenseDetailScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [categoriesRes, walletsRes] = await Promise.all([
-        api.getCategories(1, 100),
-        api.getWallets()
-      ]);
-
-      if (categoriesRes.categories) {
-        setCategories(categoriesRes.categories);
+  // Auto-select Cash wallet for new expenses when wallets data arrives
+  useEffect(() => {
+    if (isNew && wallets.length > 0 && !walletId) {
+      const cash = wallets.find(w => w.name === 'Cash');
+      if (cash) {
+        setWalletId(cash.id);
+      } else {
+        setWalletId(wallets[0].id);
       }
-      if (walletsRes.wallets) {
-        setWallets(walletsRes.wallets);
-        
-        // Auto-select Cash wallet if it exists, otherwise the first wallet
-        const cash = walletsRes.wallets.find(w => w.name === 'Cash');
-        if (cash) {
-          setWalletId(cash.id);
-        } else if (walletsRes.wallets.length > 0) {
-          setWalletId(walletsRes.wallets[0].id);
-        }
-      }
-
-      if (!isNew && id) {
-        const expenseRes = await api.getExpense(id);
-        if (expenseRes.expense) {
-          const exp = expenseRes.expense;
-          setTitle(exp.title);
-          setAmount(exp.amount.toString());
-          setCurrency(exp.currency || 'BDT');
-          setType(exp.type || 'EXPENSE');
-          setCategoryId(exp.categoryId || undefined);
-          setWalletId(exp.walletId || '');
-          setToWalletId(exp.toWalletId || '');
-          setDescription(exp.description || '');
-          setDate(exp.date.split('T')[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Failed to load details');
-    } finally {
-      setIsLoading(false);
     }
-  }, [id, isNew]);
+  }, [isNew, wallets, walletId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData])
-  );
+  // Populate form for editing existing expenses
+  useEffect(() => {
+    if (!isNew && expenseRes?.expense) {
+      const exp = expenseRes.expense;
+      setTitle(exp.title);
+      setAmount(exp.amount.toString());
+      setCurrency(exp.currency || 'BDT');
+      setType(exp.type || 'EXPENSE');
+      setCategoryId(exp.categoryId || undefined);
+      setWalletId(exp.walletId || '');
+      setToWalletId(exp.toWalletId || '');
+      setDescription(exp.description || '');
+      setDate(exp.date.split('T')[0]);
+    }
+  }, [expenseRes, isNew]);
+
+  const isLoading = isExpenseLoading;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
 
   const validate = () => {
     if (!title.trim()) {
@@ -172,39 +212,25 @@ export default function ExpenseDetailScreen() {
     return true;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validate()) return;
 
-    setIsSaving(true);
-    try {
-      const expenseData = {
-        title: title.trim(),
-        amount: parseFloat(amount),
-        currency,
-        type,
-        walletId,
-        toWalletId: type === 'TRANSFER' ? toWalletId : undefined,
-        categoryId: type === 'TRANSFER' ? undefined : categoryId,
-        description: description.trim() || undefined,
-        date,
-      };
+    const expenseData = {
+      title: title.trim(),
+      amount: parseFloat(amount),
+      currency,
+      type,
+      walletId,
+      toWalletId: type === 'TRANSFER' ? toWalletId : undefined,
+      categoryId: type === 'TRANSFER' ? undefined : categoryId,
+      description: description.trim() || undefined,
+      date,
+    };
 
-      if (isNew) {
-        await api.createExpense(expenseData);
-      } else if (id) {
-        await api.updateExpense(id, expenseData);
-      }
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
-    } catch (error) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to save transaction'
-      );
-    } finally {
-      setIsSaving(false);
+    if (isNew) {
+      createMutation.mutate(expenseData);
+    } else if (id) {
+      updateMutation.mutate(expenseData);
     }
   };
 
@@ -227,19 +253,9 @@ export default function ExpenseDetailScreen() {
     }).start(() => setShowDeleteConfirm(false));
   };
 
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    try {
-      if (id) {
-        await api.deleteExpense(id);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.back();
-      }
-    } catch {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to delete transaction');
-      setIsDeleting(false);
-      handleCancelDelete();
+  const handleConfirmDelete = () => {
+    if (id) {
+      deleteMutation.mutate();
     }
   };
 

@@ -8,7 +8,7 @@ import { StorageAccessFramework } from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState, useMemo } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { ExpenseListItem } from '@/components/expenses/expense-list-item';
 import { ExpenseFilterModal } from '@/components/expenses/expense-filter-modal';
@@ -152,6 +152,26 @@ export default function ExpensesScreen() {
     // React Query handles this automatically via the filters dependency
   };
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      try {
+        await api.bulkDeleteExpenses(ids);
+      } catch {
+        await Promise.all(ids.map(id => api.deleteExpense(id)));
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.expenses.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wallets.all });
+      setSelectedExpenses([]);
+      setIsSelectionMode(false);
+      Alert.alert('Success', 'Transactions deleted successfully');
+    },
+    onError: () => {
+      Alert.alert('Error', 'Failed to delete transactions');
+    }
+  });
+
   // Bulk delete functionality
   const handleBulkDelete = () => {
     if (selectedExpenses.length === 0) return;
@@ -164,20 +184,8 @@ export default function ExpensesScreen() {
         {
           text: 'Delete All',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              try {
-                await api.bulkDeleteExpenses(selectedExpenses);
-              } catch {
-                await Promise.all(selectedExpenses.map(id => api.deleteExpense(id)));
-              }
-              refetchExpenses();
-              setSelectedExpenses([]);
-              setIsSelectionMode(false);
-              Alert.alert('Success', `${selectedExpenses.length} transaction(s) deleted`);
-            } catch {
-              Alert.alert('Error', 'Failed to delete transactions');
-            }
+          onPress: () => {
+            bulkDeleteMutation.mutate(selectedExpenses);
           },
         },
       ]

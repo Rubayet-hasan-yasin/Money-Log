@@ -2,8 +2,9 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
 import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     ActivityIndicator,
     Alert,
@@ -20,8 +21,8 @@ export default function WalletDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = !id || id === 'new';
 
-  const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
@@ -36,36 +37,65 @@ export default function WalletDetailScreen() {
   const tintColor = useThemeColor({}, 'tint');
   const cardBg = useThemeColor({ light: '#f8fafc', dark: '#1e1e2e' }, 'background');
 
-  const fetchWallet = useCallback(async () => {
-    if (isNew || !id) return;
+  const { data: walletsResponse, isLoading: isQueryLoading } = useQuery({
+    queryKey: ['wallets'],
+    queryFn: () => api.getWallets(),
+    enabled: !isNew && !!id,
+  });
 
-    try {
-      const response = await api.getWallets();
-      if (response.wallets) {
-        const wallet = response.wallets.find(w => w.id === id);
-        if (wallet) {
-          setName(wallet.name);
-          setIcon(wallet.icon || '💵');
-          setColor(wallet.color || '#10B981');
-          setBalance(wallet.balance.toString());
-        } else {
-          Alert.alert('Error', 'Wallet not found');
-          router.back();
-        }
+  useEffect(() => {
+    if (walletsResponse?.wallets) {
+      const wallet = walletsResponse.wallets.find(w => w.id === id);
+      if (wallet) {
+        setName(wallet.name);
+        setIcon(wallet.icon || '💵');
+        setColor(wallet.color || '#10B981');
+        setBalance(wallet.balance.toString());
+      } else {
+        Alert.alert('Error', 'Wallet not found');
+        router.back();
       }
-    } catch (error) {
-      console.error('Error fetching wallet:', error);
-      Alert.alert('Error', 'Failed to load wallet');
-    } finally {
-      setIsLoading(false);
     }
-  }, [id, isNew]);
+  }, [walletsResponse, id]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchWallet();
-    }, [fetchWallet])
-  );
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => api.createWallet(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      router.back();
+    },
+    onError: (error) => {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save wallet');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => api.updateWallet(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      router.back();
+    },
+    onError: (error) => {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save wallet');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error('ID missing');
+      return api.deleteWallet(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      router.back();
+    },
+    onError: (error) => {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete wallet');
+    },
+  });
+
+  const isLoading = isQueryLoading;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const validate = () => {
     if (!name.trim()) {
@@ -79,32 +109,20 @@ export default function WalletDetailScreen() {
     return true;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validate()) return;
 
-    setIsSaving(true);
-    try {
-      const walletData = {
-        name: name.trim(),
-        icon,
-        color,
-        balance: parseFloat(balance),
-      };
+    const walletData = {
+      name: name.trim(),
+      icon,
+      color,
+      balance: parseFloat(balance),
+    };
 
-      if (isNew) {
-        await api.createWallet(walletData);
-      } else if (id) {
-        await api.updateWallet(id, walletData);
-      }
-
-      router.back();
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to save wallet'
-      );
-    } finally {
-      setIsSaving(false);
+    if (isNew) {
+      createMutation.mutate(walletData);
+    } else if (id) {
+      updateMutation.mutate(walletData);
     }
   };
 
@@ -117,15 +135,8 @@ export default function WalletDetailScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              if (id) {
-                await api.deleteWallet(id);
-                router.back();
-              }
-            } catch (error) {
-              Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete wallet');
-            }
+          onPress: () => {
+            deleteMutation.mutate();
           },
         },
       ]

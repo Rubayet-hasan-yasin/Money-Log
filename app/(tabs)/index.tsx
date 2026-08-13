@@ -29,56 +29,53 @@ export default function HomeScreen() {
 
   // const { user } = useAuth();
 
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
-  const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
-  const [categoryAnalytics, setCategoryAnalytics] = useState<CategoryAnalytics[]>([]);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
 
-  const fetchDashboardData = async () => {
-    try {
-
+  const {
+    data: dashboardData,
+    isLoading: isDashboardLoading,
+    isRefetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
       const start = Date.now();
       const [summaryRes, recentRes, trendsRes, analyticsRes, walletsRes] = await Promise.all([
         api.getDashboardSummary(),
         api.getRecentExpenses(5),
         api.getMonthlyTrends(new Date().getFullYear()),
         api.getCategoryAnalytics(),
-        api.getWallets()
+        api.getWallets(),
       ]);
-
-      if (summaryRes.summary) setSummary(summaryRes.summary);
-      if (recentRes.expenses) setRecentExpenses(recentRes.expenses);
-      if (trendsRes.trends) setMonthlyTrends(trendsRes.trends);
-      if (analyticsRes.categoryAnalytics) setCategoryAnalytics(analyticsRes.categoryAnalytics);
-      if (walletsRes.wallets) setWallets(walletsRes.wallets);
-
       const end = Date.now();
       console.log(`Dashboard data fetched in ${end - start}ms`);
 
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+      return {
+        summary: summaryRes.summary || null,
+        recentExpenses: recentRes.expenses || [],
+        monthlyTrends: trendsRes.trends || [],
+        categoryAnalytics: analyticsRes.categoryAnalytics || [],
+        wallets: walletsRes.wallets || [],
+      };
+    },
+  });
+
+  const summary = dashboardData?.summary || null;
+  const recentExpenses = dashboardData?.recentExpenses || [];
+  const monthlyTrends = dashboardData?.monthlyTrends || [];
+  const categoryAnalytics = dashboardData?.categoryAnalytics || [];
+  const wallets = dashboardData?.wallets || [];
 
   useFocusEffect(
     useCallback(() => {
-      fetchDashboardData();
-    }, [])
+      refetch();
+    }, [refetch])
   );
 
   const onRefresh = () => {
-    setIsRefreshing(true);
     refetchUsers();
-    fetchDashboardData();
+    refetch();
   };
 
   // Calculate expense trend
@@ -101,7 +98,7 @@ export default function HomeScreen() {
     return categoryAnalytics.reduce((sum, cat) => sum + cat.totalAmount, 0);
   };
 
-  if (isLoading) {
+  if (isDashboardLoading) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor }}>
         <ActivityIndicator size="large" color={tintColor} />
@@ -119,7 +116,7 @@ export default function HomeScreen() {
       style={{ backgroundColor }}
       contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />
       }
     >
       {/* <DashboardHeader userName={user?.name} /> */}
