@@ -1,6 +1,5 @@
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -9,6 +8,7 @@ import 'react-native-reanimated';
 import "../global.css"
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
+import { ThemeProvider, DarkTheme, DefaultTheme } from 'expo-router/react-navigation';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -32,7 +32,7 @@ function RootLayoutNav() {
       // Redirect to home if authenticated and on auth screens
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, router, segments]);
 
   // Show loading screen while checking auth
   if (isLoading) {

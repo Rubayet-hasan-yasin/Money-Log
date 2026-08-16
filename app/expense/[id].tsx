@@ -1,28 +1,27 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/services/api';
-import { Category, CURRENCIES, Wallet } from '@/types';
+import { Category, CURRENCIES } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    FlatList,
-    KeyboardAvoidingView,
-    LayoutAnimation,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    UIManager,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  KeyboardAvoidingView,
+  LayoutAnimation,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const QUICK_DATES = [
@@ -41,9 +40,9 @@ const getDateString = (daysAgo: number) => {
 const formatDisplayDate = (dateStr: string) => {
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -56,17 +55,17 @@ export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = !id || id === 'new';
   const queryClient = useQueryClient();
-  
+
   const { data: categoriesRes } = useQuery({
     queryKey: ['categories', 1, 100],
     queryFn: () => api.getCategories(1, 100),
   });
-  
+
   const { data: walletsRes } = useQuery({
     queryKey: ['wallets'],
     queryFn: () => api.getWallets(),
   });
-  
+
   const { data: expenseRes, isLoading: isExpenseLoading } = useQuery({
     queryKey: ['expense', id],
     queryFn: () => api.getExpense(id),
@@ -425,7 +424,7 @@ export default function ExpenseDetailScreen() {
           <View className="h-[1px] ml-[68px] bg-gray-200" />
 
           {/* Source Wallet Selector */}
-          <Pressable 
+          <Pressable
             className="flex-row items-center p-4"
             onPress={() => setShowWalletPicker(true)}
           >
@@ -456,7 +455,7 @@ export default function ExpenseDetailScreen() {
             <>
               <View className="h-[1px] ml-[68px] bg-gray-200" />
               {/* Destination Wallet Selector */}
-              <Pressable 
+              <Pressable
                 className="flex-row items-center p-4"
                 onPress={() => setShowToWalletPicker(true)}
               >
@@ -487,7 +486,7 @@ export default function ExpenseDetailScreen() {
             <>
               <View className="h-[1px] ml-[68px] bg-gray-200" />
               {/* Category Selector */}
-              <Pressable 
+              <Pressable
                 className="flex-row items-center p-4"
                 onPress={() => setShowCategoryPicker(true)}
               >
@@ -517,7 +516,7 @@ export default function ExpenseDetailScreen() {
           <View className="h-[1px] ml-[68px] bg-gray-200" />
 
           {/* Date Selector */}
-          <Pressable 
+          <Pressable
             className="flex-row items-center p-4"
             onPress={() => setShowDatePicker(true)}
           >
@@ -607,10 +606,10 @@ export default function ExpenseDetailScreen() {
         onRequestClose={handleCancelDelete}
       >
         <Pressable className="flex-1 bg-black/60 justify-center items-center p-6" onPress={handleCancelDelete}>
-          <Animated.View 
+          <Animated.View
             className="w-full rounded-[24px] p-6 items-center shadow-lg elevation-8"
             style={[
-              { 
+              {
                 backgroundColor,
                 transform: [{ scale: deleteAnim }],
                 opacity: deleteAnim,
@@ -663,7 +662,7 @@ export default function ExpenseDetailScreen() {
           <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
             <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
               <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Date</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="p-2"
                 onPress={() => {
                   setShowDatePicker(false);
@@ -673,7 +672,7 @@ export default function ExpenseDetailScreen() {
                 <Ionicons name="close" size={24} color={textColor} />
               </TouchableOpacity>
             </View>
-            
+
             {/* Quick Date Buttons */}
             <View className="flex-row flex-wrap p-4 gap-2.5">
               {QUICK_DATES.map((item) => {
@@ -716,18 +715,18 @@ export default function ExpenseDetailScreen() {
                   setShowCalendar(!showCalendar);
                 }}
               >
-                <Ionicons 
-                  name="calendar" 
-                  size={20} 
-                  color={showCalendar ? tintColor : '#6b7280'} 
+                <Ionicons
+                  name="calendar"
+                  size={20}
+                  color={showCalendar ? tintColor : '#6b7280'}
                 />
                 <Text className="text-[15px] font-medium" style={{ color: showCalendar ? tintColor : textColor }}>
                   Pick from calendar
                 </Text>
-                <Ionicons 
-                  name={showCalendar ? "chevron-up" : "chevron-down"} 
-                  size={18} 
-                  color={showCalendar ? tintColor : '#9ca3af'} 
+                <Ionicons
+                  name={showCalendar ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={showCalendar ? tintColor : '#9ca3af'}
                 />
               </TouchableOpacity>
 
@@ -741,7 +740,7 @@ export default function ExpenseDetailScreen() {
                       Selected: {formatDisplayDate(date)}
                     </Text>
                   </View>
-                  
+
                   <DateTimePicker
                     value={new Date(date)}
                     mode="date"
@@ -766,7 +765,7 @@ export default function ExpenseDetailScreen() {
                     themeVariant="light"
                     className="w-full h-[150px]"
                   />
-                  
+
                   {Platform.OS === 'ios' && (
                     <Text className="text-xs text-gray-400 mt-2 italic">
                       Scroll to select date
@@ -801,7 +800,7 @@ export default function ExpenseDetailScreen() {
           <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
             <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
               <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Currency</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="p-2"
                 onPress={() => setShowCurrencyPicker(false)}
               >
@@ -852,7 +851,7 @@ export default function ExpenseDetailScreen() {
           <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
             <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
               <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Wallet</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="p-2"
                 onPress={() => setShowWalletPicker(false)}
               >
@@ -906,7 +905,7 @@ export default function ExpenseDetailScreen() {
           <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
             <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
               <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Destination Wallet</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="p-2"
                 onPress={() => setShowToWalletPicker(false)}
               >
@@ -960,7 +959,7 @@ export default function ExpenseDetailScreen() {
           <View className="rounded-t-[20px] max-h-[70%] pb-[34px]" style={{ backgroundColor }}>
             <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
               <Text className="text-lg font-semibold" style={{ color: textColor }}>Select Category</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="p-2"
                 onPress={() => setShowCategoryPicker(false)}
               >
@@ -989,9 +988,9 @@ export default function ExpenseDetailScreen() {
                     }}
                   >
                     <Text className="text-4xl mb-2">{cat.icon || '📦'}</Text>
-                    <Text 
+                    <Text
                       className="text-sm font-medium text-center"
-                      style={{ color: textColor }} 
+                      style={{ color: textColor }}
                       numberOfLines={1}
                     >
                       {cat.name}
