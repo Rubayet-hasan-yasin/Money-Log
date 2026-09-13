@@ -90,9 +90,21 @@ axiosInstance.interceptors.response.use(
         console.error(`API Error on ${error.config?.method?.toUpperCase()} ${error.config?.url}:`, error.response?.status);
         
         if (error.response?.data) {
-            // Some backends send { error: '...' } and some send { message: '...' }
             const errorData = error.response.data as any;
-            const errorMessage = errorData?.error || errorData?.message || typeof errorData === 'string' ? errorData : 'An error occurred';
+            let errorMessage: string;
+
+            if (typeof errorData === 'string') {
+                errorMessage = errorData;
+            } else if (typeof errorData?.error === 'string') {
+                errorMessage = errorData.error;
+            } else if (typeof errorData?.message === 'string') {
+                errorMessage = errorData.message;
+            } else if (typeof errorData?.error?.message === 'string') {
+                errorMessage = errorData.error.message;
+            } else {
+                errorMessage = error.message || 'An error occurred';
+            }
+
             throw new Error(errorMessage);
         }
         throw error;

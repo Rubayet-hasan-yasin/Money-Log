@@ -1,54 +1,28 @@
-import { AntDesign } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/auth-context';
+import React from 'react';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { router } from 'expo-router';
-import { api } from '@/services/api';
-import React, { useState } from 'react';
-import * as WebBrowser from 'expo-web-browser';
+import GoogleLoginButton from '@/components/auth/google-login-button';
+import EmailLoginForm from '@/components/auth/email-login-form';
 
-import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Platform,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
 
-// Ensure the auth session properly completes and closes the browser
-WebBrowser.maybeCompleteAuthSession();
+const SHOW_EMAIL_LOGIN = true;
 
 export default function LoginScreen() {
-  const { loginWithToken } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      const { token } = await api.loginWithGoogle();
-      
-      if (token) {
-        await loginWithToken(token);
-        router.replace('/(tabs)');
-      } else {
-        Alert.alert('Login Failed', 'Authentication token was not received.');
-      }
-    } catch (error) {
-      console.error('Google Auth Error:', error);
-      Alert.alert('Login Failed', String(error));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <View className="flex-1" style={{ backgroundColor }}>
-      <View className={`flex-1 px-6 justify-between pt-[15vh] ${Platform.OS === 'ios' ? 'pb-10' : 'pb-6'}`}>
-        <View className="items-center mt-5">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1"
+      style={{ backgroundColor }}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}
+        className={`px-6 pt-[12vh] ${Platform.OS === 'ios' ? 'pb-10' : 'pb-6'}`}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="items-center mt-3">
           <Image 
             source={require('../assets/icons/adaptive-icon.png')} 
             className="w-[100px] h-[100px] mb-4"
@@ -62,24 +36,19 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <View className="w-full py-8">
-          <TouchableOpacity
-            className="bg-white rounded-full py-4 px-6 w-full shadow-md elevation-4"
-            onPress={handleGoogleLogin}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <View className="flex-row items-center justify-center gap-3">
-                <AntDesign name="google" size={24} color="#971515ff" />
-                <Text className="text-black text-lg font-semibold">
-                  Continue with Google
-                </Text>
+        <View className="w-full py-6 gap-4">
+          {SHOW_EMAIL_LOGIN && (
+            <>
+              <EmailLoginForm />
+              <View className="flex-row items-center my-2">
+                <View className="flex-1 h-[1px] bg-gray-200 dark:bg-gray-800" />
+                <Text className="mx-4 text-xs font-semibold text-gray-400 uppercase">OR</Text>
+                <View className="flex-1 h-[1px] bg-gray-200 dark:bg-gray-800" />
               </View>
-            )}
-          </TouchableOpacity>
+            </>
+          )}
+
+          <GoogleLoginButton />
         </View>
         
         <View className="items-center">
@@ -87,7 +56,7 @@ export default function LoginScreen() {
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </Text>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
