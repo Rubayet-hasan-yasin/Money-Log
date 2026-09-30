@@ -7,7 +7,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { alert } from '@/components/ui/expo-alert';
 
 export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -66,7 +66,7 @@ export default function CategoryDetailScreen() {
       router.back();
     },
     onError: (error) => {
-      Alert.alert(
+      alert(
         'Error',
         error instanceof Error ? error.message : 'Failed to create category'
       );
@@ -83,7 +83,7 @@ export default function CategoryDetailScreen() {
       router.back();
     },
     onError: (error) => {
-      Alert.alert(
+      alert(
         'Error',
         error instanceof Error ? error.message : 'Failed to update category'
       );
@@ -99,13 +99,13 @@ export default function CategoryDetailScreen() {
       router.back();
     },
     onError: () => {
-      Alert.alert('Error', 'Failed to delete category');
+      alert('Error', 'Failed to delete category');
     },
   });
 
   const validate = () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Category name is required');
+      alert('Validation Error', 'Category name is required');
       return false;
     }
     return true;
@@ -129,7 +129,7 @@ export default function CategoryDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    alert(
       'Delete Category',
       'Are you sure you want to delete this category? Expenses in this category will not be deleted.',
       [

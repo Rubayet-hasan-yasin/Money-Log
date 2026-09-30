@@ -8,7 +8,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     LayoutAnimation,
     RefreshControl,
@@ -16,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { alert } from '@/components/ui/expo-alert';
 
 export default function CategoriesScreen() {
   const queryClient = useQueryClient();
@@ -54,12 +54,12 @@ export default function CategoriesScreen() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.categories.all });
     },
     onError: () => {
-      Alert.alert('Error', 'Failed to delete category');
+      alert('Error', 'Failed to delete category');
     },
   });
 
   const handleDelete = (category: Category) => {
-    Alert.alert(
+    alert(
       'Delete Category',
       `Are you sure you want to delete "${category.name}"? This won't delete expenses in this category.`,
       [

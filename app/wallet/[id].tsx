@@ -7,7 +7,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { alert } from '@/components/ui/expo-alert';
 
 export default function WalletDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -52,7 +52,7 @@ export default function WalletDetailScreen() {
         setColor(wallet.color || '#10B981');
         setBalance(wallet.balance.toString());
       } else {
-        Alert.alert('Error', 'Wallet not found');
+        alert('Error', 'Wallet not found');
         router.back();
       }
     }
@@ -65,7 +65,7 @@ export default function WalletDetailScreen() {
       router.back();
     },
     onError: (error) => {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save wallet');
+      alert('Error', error instanceof Error ? error.message : 'Failed to save wallet');
     },
   });
 
@@ -76,7 +76,7 @@ export default function WalletDetailScreen() {
       router.back();
     },
     onError: (error) => {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save wallet');
+      alert('Error', error instanceof Error ? error.message : 'Failed to save wallet');
     },
   });
 
@@ -90,7 +90,7 @@ export default function WalletDetailScreen() {
       router.back();
     },
     onError: (error) => {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to delete wallet');
+      alert('Error', error instanceof Error ? error.message : 'Failed to delete wallet');
     },
   });
 
@@ -99,11 +99,11 @@ export default function WalletDetailScreen() {
 
   const validate = () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Wallet name is required');
+      alert('Validation Error', 'Wallet name is required');
       return false;
     }
     if (isNaN(parseFloat(balance))) {
-      Alert.alert('Validation Error', 'Starting balance must be a number');
+      alert('Validation Error', 'Starting balance must be a number');
       return false;
     }
     return true;
@@ -127,7 +127,7 @@ export default function WalletDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    alert(
       'Delete Wallet',
       'Are you sure you want to delete this wallet? You can only delete wallets with no transaction history.',
       [

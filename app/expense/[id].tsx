@@ -9,7 +9,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   FlatList,
   KeyboardAvoidingView,
@@ -23,6 +22,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { alert } from '@/components/ui/expo-alert';
 
 const QUICK_DATES = [
   { label: 'Today', days: 0 },
@@ -82,7 +82,7 @@ export default function ExpenseDetailScreen() {
     },
     onError: (error) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create transaction');
+      alert('Error', error instanceof Error ? error.message : 'Failed to create transaction');
     },
   });
 
@@ -97,7 +97,7 @@ export default function ExpenseDetailScreen() {
     },
     onError: (error) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update transaction');
+      alert('Error', error instanceof Error ? error.message : 'Failed to update transaction');
     },
   });
 
@@ -111,7 +111,7 @@ export default function ExpenseDetailScreen() {
     },
     onError: () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to delete transaction');
+      alert('Error', 'Failed to delete transaction');
     },
   });
 
@@ -178,34 +178,34 @@ export default function ExpenseDetailScreen() {
   const validate = () => {
     if (!title.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Missing Title', 'Please enter a title');
+      alert('Missing Title', 'Please enter a title');
       return false;
     }
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Invalid Amount', 'Please enter a valid amount greater than 0');
+      alert('Invalid Amount', 'Please enter a valid amount greater than 0');
       return false;
     }
     if (!walletId) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Missing Wallet', 'Please select a wallet');
+      alert('Missing Wallet', 'Please select a wallet');
       return false;
     }
     if (type === 'TRANSFER') {
       if (!toWalletId) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('Missing Destination', 'Please select a destination wallet');
+        alert('Missing Destination', 'Please select a destination wallet');
         return false;
       }
       if (walletId === toWalletId) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('Invalid Transfer', 'Source and destination wallets must be different');
+        alert('Invalid Transfer', 'Source and destination wallets must be different');
         return false;
       }
     }
     if (!date) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Missing Date', 'Please select a date');
+      alert('Missing Date', 'Please select a date');
       return false;
     }
     return true;

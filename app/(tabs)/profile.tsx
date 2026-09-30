@@ -1,11 +1,11 @@
 import { useAuth } from '@/contexts/auth-context';
+import { alert } from '@/components/ui/expo-alert';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     Text,
     TextInput,
@@ -31,10 +31,10 @@ export default function ProfileScreen() {
     },
     onSuccess: () => {
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
+      alert('Success', 'Profile updated successfully');
     },
     onError: (error) => {
-      Alert.alert(
+      alert(
         'Error',
         error instanceof Error ? error.message : 'Failed to update profile'
       );
@@ -43,12 +43,12 @@ export default function ProfileScreen() {
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Name is required');
+      alert('Error', 'Name is required');
       return;
     }
 
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Error', 'Valid email is required');
+      alert('Error', 'Valid email is required');
       return;
     }
 
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
+    alert('Logout', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',

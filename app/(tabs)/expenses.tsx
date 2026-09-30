@@ -15,7 +15,6 @@ import { ExpenseFilterModal } from '@/components/expenses/expense-filter-modal';
 import { ExpenseHeader } from '@/components/expenses/expense-header';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     RefreshControl,
@@ -25,6 +24,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { alert } from '@/components/ui/expo-alert';
 
 type SortOption = 'date' | 'amount' | 'category';
 type SortOrder = 'asc' | 'desc';
@@ -165,10 +165,10 @@ export default function ExpensesScreen() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.wallets.all });
       setSelectedExpenses([]);
       setIsSelectionMode(false);
-      Alert.alert('Success', 'Transactions deleted successfully');
+      alert('Success', 'Transactions deleted successfully');
     },
     onError: () => {
-      Alert.alert('Error', 'Failed to delete transactions');
+      alert('Error', 'Failed to delete transactions');
     }
   });
 
@@ -176,7 +176,7 @@ export default function ExpensesScreen() {
   const handleBulkDelete = () => {
     if (selectedExpenses.length === 0) return;
     
-    Alert.alert(
+    alert(
       'Delete Transactions',
       `Are you sure you want to delete ${selectedExpenses.length} transaction(s)?`,
       [
@@ -216,7 +216,7 @@ export default function ExpensesScreen() {
         : expenses;
       
       if (dataToExport.length === 0) {
-        Alert.alert('No Data', 'There are no transactions to export');
+        alert('No Data', 'There are no transactions to export');
         return;
       }
 
@@ -252,7 +252,7 @@ export default function ExpensesScreen() {
       const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
       
       if (!permissions.granted) {
-        Alert.alert('Permission Required', 'Please grant folder access to save the CSV file');
+        alert('Permission Required', 'Please grant folder access to save the CSV file');
         return;
       }
 
@@ -264,7 +264,7 @@ export default function ExpensesScreen() {
 
       await StorageAccessFramework.writeAsStringAsync(fileUri, csv);
 
-      Alert.alert('Success', `Transactions exported to ${filename}`);
+      alert('Success', `Transactions exported to ${filename}`);
       
       if (selectedExpenses.length > 0) {
         setSelectedExpenses([]);
@@ -272,7 +272,7 @@ export default function ExpensesScreen() {
       }
     } catch (error) {
       console.error('Export error:', error);
-      Alert.alert('Error', 'Failed to export transactions. Please try again.');
+      alert('Error', 'Failed to export transactions. Please try again.');
     }
   };
 

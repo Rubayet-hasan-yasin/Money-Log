@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
+import { alert } from '@/components/ui/expo-alert';
 import { api } from '@/services/api';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -21,11 +22,11 @@ export default function GoogleLoginButton() {
         await loginWithToken(token);
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Login Failed', 'Authentication token was not received.');
+        alert('Login Failed', 'Authentication token was not received.');
       }
     } catch (error) {
       console.error('Google Auth Error:', error);
-      Alert.alert('Login Failed', String(error));
+      alert('Login Failed', error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
     }

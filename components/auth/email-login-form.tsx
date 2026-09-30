@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Text,
   TextInput,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/auth-context';
+import { alert } from '@/components/ui/expo-alert';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 const loginSchema = z.object({
@@ -54,7 +54,7 @@ export default function EmailLoginForm() {
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Email Login Error:', error);
-      Alert.alert('Login Failed', error.message || 'Invalid email or password.');
+      alert('Login Failed', error.message || 'Invalid email or password.');
     } finally {
       setIsLoading(false);
     }

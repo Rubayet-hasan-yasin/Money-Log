@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { Toaster } from '@/components/ui/expo-alert';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -101,6 +102,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RootLayoutNav />
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );
